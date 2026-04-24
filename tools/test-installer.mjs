@@ -7,6 +7,7 @@ import { test } from "node:test"
 
 const PROJECT_ROOT = process.cwd()
 const WIZARD_PATH = path.join(PROJECT_ROOT, "tools", "installer", "wizard.mjs")
+const INSTALLER_E2E_TEST_PATH = path.join(PROJECT_ROOT, "tools", "test-installer-e2e.mjs")
 const LINUX_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "linux", "install.sh")
 const MACOS_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "macos", "install.command")
 const WINDOWS_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "windows", "install.cmd")
@@ -20,6 +21,7 @@ const runProcess = async (command, args, options = {}) =>
 		const child = spawn(command, args, {
 			cwd: options.cwd ?? PROJECT_ROOT,
 			env: options.env ?? process.env,
+			shell: options.shell ?? false,
 			stdio: ["ignore", "pipe", "pipe"],
 		})
 
@@ -123,10 +125,19 @@ test("installer wizard accepts install info file for wrapper-provided data", asy
 
 test("installer wizard uses robust child-process handling", async () => {
 	const source = await readFile(WIZARD_PATH, "utf8")
+	const e2eSource = await readFile(INSTALLER_E2E_TEST_PATH, "utf8")
 
 	assert.doesNotMatch(source, /stdio:\s*"inherit"/u)
 	assert.match(source, /stdio: \["ignore", "pipe", "pipe"\]/u)
 	assert.match(source, /formatCommandFailure/u)
+	assert.match(source, /WINDOWS_COMMAND_SCRIPT_EXECUTABLES = new Set\(\["npm"\]\)/u)
+	assert.match(source, /executable: "cmd\.exe"/u)
+	assert.match(source, /args: \["\/d", "\/s", "\/c", `\$\{command\}\.cmd`, \.\.\.args\]/u)
+	assert.doesNotMatch(source, /return "npm\.cmd"/u)
+	assert.match(e2eSource, /command: WINDOWS_WRAPPER_PATH/u)
+	assert.match(e2eSource, /buildArgs: \(wrapperArgs\) => wrapperArgs/u)
+	assert.match(e2eSource, /shell: true/u)
+	assert.doesNotMatch(e2eSource, /cmd\.exe[\s\S]*WINDOWS_WRAPPER_PATH[\s\S]*wrapperArgs\.join/u)
 })
 
 test("VS Code workspace does not auto-run extension installer on folder open", async () => {
@@ -158,8 +169,7 @@ test("platform wrapper runs non-interactive installer flow", { timeout: 180000 }
 	}
 
 	if (process.platform === "win32") {
-		const commandLine = `\"${WINDOWS_WRAPPER_PATH}\" ${BASE_NON_INTERACTIVE_ARGS.join(" ")}`
-		const result = await runProcess("cmd.exe", ["/d", "/s", "/c", commandLine], { env })
+		const result = await runProcess(WINDOWS_WRAPPER_PATH, BASE_NON_INTERACTIVE_ARGS, { env, shell: true })
 		assert.equal(result.code, 0, outputOf(result))
 		assert.match(result.stdout, /\[installer\] Installation finished\./u)
 		return

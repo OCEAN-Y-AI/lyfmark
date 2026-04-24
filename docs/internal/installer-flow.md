@@ -109,6 +109,7 @@ Projekt-Wizard (`tools/installer/wizard.mjs`):
 	- `--skip-dependencies`
 	- `--skip-repair`
 - npm-Shortcut: `npm run installer:wizard`
+- Windows-Regel: `npm`-Befehle werden im Wizard über `cmd.exe /d /s /c npm.cmd ...` gestartet. Das ist nötig, weil `npm` dort als `.cmd`-Script bereitsteht; echte Executables wie `git` oder `ssh-keygen` werden weiterhin direkt gestartet.
 
 Non-interactive (`--yes`) contract:
 

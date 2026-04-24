@@ -44,6 +44,7 @@ const runProcess = async (command, args, options = {}) =>
 			cwd: options.cwd ?? PROJECT_ROOT,
 			env: options.env ?? process.env,
 			stdio: options.stdio ?? ["ignore", "pipe", "pipe"],
+			shell: options.shell ?? false,
 		})
 
 		let stdout = ""
@@ -176,8 +177,9 @@ const ensureMockSshKeygenIfMissing = async (env, homeDirectory) => {
 const selectWrapperInvocation = () => {
 	if (process.platform === "win32") {
 		return {
-			command: "cmd.exe",
-			buildArgs: (wrapperArgs) => ["/d", "/s", "/c", `\"${WINDOWS_WRAPPER_PATH}\" ${wrapperArgs.join(" ")}`],
+			command: WINDOWS_WRAPPER_PATH,
+			buildArgs: (wrapperArgs) => wrapperArgs,
+			shell: true,
 		}
 	}
 	if (process.platform === "darwin") {
@@ -264,6 +266,7 @@ const runAutoMode = async (homeDirectory, env, mockUrlLogPath) => {
 
 	const result = await runProcess(wrapperInvocation.command, wrapperArgs, {
 		env: testEnv,
+		shell: wrapperInvocation.shell ?? false,
 	})
 	const mergedOutput = `${result.stdout}\n${result.stderr}`
 	assert.equal(result.code, 0, mergedOutput)
@@ -295,6 +298,7 @@ const runManualMode = async (homeDirectory, env, mockGithub) => {
 
 	const result = await runProcess(wrapperInvocation.command, wrapperArgs, {
 		env,
+		shell: wrapperInvocation.shell ?? false,
 		stdio: "inherit",
 	})
 	if (result.code !== 0) {

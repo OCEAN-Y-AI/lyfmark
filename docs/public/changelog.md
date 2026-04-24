@@ -8,6 +8,7 @@ Stand: 24.04.2026
 - Am Ende der Installation wird die vorbereitete VS-Code-Kundenansicht automatisch geöffnet und zusätzlich als Desktop-Link angelegt.
 - Die LyfMark-VS-Code-Erweiterung wird vor dem ersten Öffnen einmalig eingerichtet. Dadurch startet VS Code stabil ohne wiederholt neue Fenster zu öffnen.
 - Die Installation läuft nach der Zustimmung zu benötigten Programmen zuverlässiger weiter und vermeidet unnötige weitere Eingaben.
+- Die Windows-Installation startet die Projektvorbereitung jetzt robuster. Dadurch läuft der Schritt zum Einrichten der Projektabhängigkeiten zuverlässiger durch.
 
 Stand: 22.04.2026
 
