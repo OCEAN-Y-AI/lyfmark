@@ -79,11 +79,11 @@ function Invoke-NativeCommand {
 
 	Write-Host "[lyfmark-install] $Label"
 	if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) {
-		& $Command @Arguments
+		& $Command @Arguments 2>&1 | ForEach-Object { Write-Host $_ }
 	} else {
 		Push-Location $WorkingDirectory
 		try {
-			& $Command @Arguments
+			& $Command @Arguments 2>&1 | ForEach-Object { Write-Host $_ }
 		} finally {
 			Pop-Location
 		}
@@ -569,7 +569,11 @@ function Main {
 
 	Invoke-ElevatedToolInstallIfNeeded
 	Ensure-RequiredTools
-	$projectDirectory = Install-ProjectSources
+	$projectDirectoryOutput = @(Install-ProjectSources)
+	if ($projectDirectoryOutput.Count -ne 1) {
+		throw "Internal installer error: project source setup returned unexpected output."
+	}
+	$projectDirectory = [string]$projectDirectoryOutput[0]
 	Invoke-ProjectWizard $projectDirectory
 	Install-LyfMarkVsCodeExtension $projectDirectory
 	New-DesktopWorkspaceShortcut $projectDirectory

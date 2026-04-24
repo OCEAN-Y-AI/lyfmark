@@ -9,6 +9,7 @@ Stand: 24.04.2026
 - Die LyfMark-VS-Code-Erweiterung wird vor dem ersten Öffnen einmalig eingerichtet. Dadurch startet VS Code stabil ohne wiederholt neue Fenster zu öffnen.
 - Die Installation läuft nach der Zustimmung zu benötigten Programmen zuverlässiger weiter und vermeidet unnötige weitere Eingaben.
 - Die Windows-Installation startet die Projektvorbereitung jetzt robuster. Dadurch läuft der Schritt zum Einrichten der Projektabhängigkeiten zuverlässiger durch.
+- Beim erneuten Ausführen der Windows-Installation wird ein bereits vorhandenes Projekt jetzt zuverlässiger aktualisiert und danach korrekt weiter eingerichtet.
 
 Stand: 22.04.2026
 

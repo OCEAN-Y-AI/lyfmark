@@ -126,6 +126,7 @@ Admin-/Tool-Installationsvertrag:
 - Danach läuft der eigentliche Projekt-Setup wieder im normalen Nutzerkontext weiter.
 - `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
 - Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
+- Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `git pull`) müssen an die Konsole geschrieben werden und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen.
 
 ## Automatisierte Tests (CI)
 
