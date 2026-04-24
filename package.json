@@ -1,0 +1,50 @@
+{
+  "name": "lyfmark-base-template",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "predev": "npm run lyfmark:sync",
+    "dev": "astro dev",
+    "lyfmark:sync": "node tools/lyfmark-sync.mjs",
+    "lyfmark:sync:verbose": "node tools/lyfmark-sync.mjs --verbose",
+    "installer:wizard": "node tools/installer/wizard.mjs",
+    "repair": "node tools/repair.mjs",
+    "prebuild": "npm run lyfmark:sync && npm run format:content",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "typecheck": "tsc --noEmit",
+    "format:content": "prettier --write \"pages/**/*.md\" \"navigation/**/*.md\"",
+    "format": "prettier --write \"**/*.md\"",
+    "format:check": "prettier --check \"**/*.md\"",
+    "test:lyfmark-prettier": "node tools/test-lyfmark-prettier.mjs",
+    "test:installer": "node tools/test-installer.mjs",
+    "test:installer:e2e:auto": "node tools/test-installer-e2e.mjs --mode=auto",
+    "test:installer:e2e:manual": "node tools/test-installer-e2e.mjs --mode=manual --keep-home",
+    "test:hmr-links": "node tools/test-hmr-links.mjs",
+    "test:frontmatter-colors": "node tools/test-frontmatter-colors.mjs",
+    "package:offline": "node tools/package-offline.mjs",
+    "render:shot": "node tools/browser-render.mjs",
+    "render:compare": "node tools/browser-render.mjs --compare",
+    "render:wave-matrix": "node tools/render-wave-matrix.mjs"
+  },
+  "dependencies": {
+    "astro": "^6.1.8",
+    "js-yaml": "^4.1.1",
+    "lucide-static": "^0.577.0",
+    "mdast-util-from-markdown": "^2.0.2",
+    "remark-directive": "^4.0.0",
+    "remark-smartypants": "^3.0.2",
+    "unist-util-visit": "^5.0.0",
+    "vfile": "^6.0.3"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^25.3.3",
+    "@types/unist": "^3.0.3",
+    "playwright": "^1.58.2",
+    "prettier": "^3.6.2",
+    "sass-embedded": "^1.93.2",
+    "typescript": "^5.9.3"
+  }
+}

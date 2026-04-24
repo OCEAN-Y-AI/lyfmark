@@ -1,0 +1,17 @@
+<svg width="1200" height="700" viewBox="0 0 1200 700" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative wave mesh">
+	<defs>
+		<linearGradient id="wave-gradient" x1="0" y1="0" x2="1200" y2="700" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#1C8C7B" />
+			<stop offset="1" stop-color="#3D5A73" />
+		</linearGradient>
+	</defs>
+	<rect width="1200" height="700" fill="white" />
+	<g stroke="url(#wave-gradient)" stroke-width="2" stroke-linecap="round" opacity="0.75">
+		<path d="M0 128C150 81 270 65 420 114C570 163 690 202 840 176C990 150 1080 85 1200 64" />
+		<path d="M0 202C170 164 300 165 430 209C560 253 690 294 840 271C990 248 1080 178 1200 159" />
+		<path d="M0 276C180 245 320 258 450 300C580 342 700 383 850 364C1000 345 1090 272 1200 256" />
+		<path d="M0 349C185 327 325 349 460 392C595 435 720 477 870 461C1020 445 1110 371 1200 357" />
+		<path d="M0 423C190 409 340 437 470 481C600 525 730 568 880 555C1030 542 1120 472 1200 460" />
+		<path d="M0 497C196 491 348 524 486 569C624 614 754 658 904 649C1054 640 1137 576 1200 566" />
+	</g>
+</svg>

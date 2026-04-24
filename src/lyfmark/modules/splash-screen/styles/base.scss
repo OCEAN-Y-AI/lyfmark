@@ -1,0 +1,104 @@
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+
+.splash-screen {
+	--splash-screen-background: #{$color-light};
+	--splash-screen-text: #{$color-dark};
+	--splash-screen-padding: clamp(1rem, 3vw, 2.5rem);
+	--splash-screen-exit-duration: 520ms;
+	--splash-screen-overlay-exit-duration: var(--splash-screen-exit-duration);
+	--splash-screen-overlay-exit-easing: ease-out;
+	--splash-screen-content-enter-easing: ease-in;
+
+	position: fixed;
+	inset: 0;
+	z-index: 1200;
+	overflow: hidden;
+	padding: var(--splash-screen-padding);
+	background: var(--splash-screen-background);
+	color: var(--splash-screen-text);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+.splash-screen--tone-light {
+	--splash-screen-background: #{$color-light};
+	--splash-screen-text: #{$color-dark};
+}
+
+.splash-screen--tone-dark {
+	--splash-screen-background: #{$color-dark};
+	--splash-screen-text: #{$color-light};
+}
+
+.splash-screen[hidden] {
+	display: none;
+}
+
+.splash-screen--active {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+}
+
+.splash-screen--exiting {
+	pointer-events: none;
+}
+
+.splash-screen--exit-fade-out {
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity var(--splash-screen-overlay-exit-duration, 520ms) var(--splash-screen-overlay-exit-easing, ease-out), visibility 0s linear var(--splash-screen-overlay-exit-duration, 520ms);
+}
+
+.splash-screen__content {
+	width: min(100%, var(--layout-page-max-width, 1200px));
+	min-height: calc(100dvh - (var(--splash-screen-padding) * 2));
+	margin: 0 auto;
+	display: grid;
+	align-content: center;
+	gap: 0.9rem;
+}
+
+.splash-screen__content > :first-child {
+	margin-top: 0;
+}
+
+.splash-screen__content > :last-child {
+	margin-bottom: 0;
+}
+
+.splash-screen__content :where(h1, h2, h3, h4, h5, h6, p, li) {
+	color: inherit;
+}
+
+body.splash-screen-visible {
+	overflow: hidden;
+
+	.page-top-chrome,
+	#page {
+		opacity: 0;
+		pointer-events: none;
+	}
+}
+
+body.splash-screen-content-entering {
+	.page-top-chrome,
+	#page {
+		transition: opacity var(--splash-screen-enter-duration, 260ms) var(--splash-screen-content-enter-easing, ease-in);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.splash-screen--exit-fade-out {
+		transition-duration: 0ms;
+	}
+
+	body.splash-screen-content-entering {
+		.page-top-chrome,
+		#page {
+			transition-duration: 0ms;
+		}
+	}
+}

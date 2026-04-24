@@ -1,0 +1,15 @@
+brandName: "LyfMark"
+defaultTitle: "LyfMark"
+defaultDescription: "Modulares, kundenneutrales Website-Basissystem für Markdown-first Inhalte."
+defaultLocale: "de"
+supportedLocales:
+  - "de"
+  - "en"
+defaultTemplate: "primary"
+menu:
+  panelTone: "light"
+  brand:
+    type: "text"
+    text: "LyfMark"
+    html: "<span class=\"manual-menu__brand-emphasis\">Lyf</span><span class=\"manual-menu__brand-regular\">Mark</span>"
+    href: "/"

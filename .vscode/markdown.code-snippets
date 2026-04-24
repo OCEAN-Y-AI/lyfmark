@@ -1,0 +1,348 @@
+{
+	"Accent rule module": {
+		"prefix": ["accent-rule"],
+		"body": [
+			":::accent-rule kind=\"${1|underline,divider|}\" before=\"${2:0}\" after=\"${3:0}\" color=\"${4:var(--ui-accent-rule-color)}\"",
+			""
+		],
+		"description": "Rendert einen festen Design-Strich als Unterstreichung oder Trenner."
+	},
+	"Accordion module": {
+		"prefix": ["accordion"],
+		"body": [
+			":::accordion label=\"${1:FAQ}\"",
+			"### ${2:Erste Frage}",
+			"${3:Kurze Antwort oder Beschreibung.}",
+			"",
+			"---",
+			"",
+			"### ${4:Zweite Frage}",
+			"${5:Weitere Details.}",
+			":::",
+			""
+		],
+		"description": "Klappbare Abschnitte mit Titel + Beschreibung, getrennt durch ---."
+	},
+	"Align module": {
+		"prefix": ["align"],
+		"body": [
+			":::align x=\"${1|left,center,right|}\" y=\"${2|top,center,bottom|}\" text=\"${3|left,center,right|}\" fill=\"${4|both,width,height,none|}\"",
+			"${5:Inhalt fuer die Ausrichtung.}",
+			":::",
+			""
+		],
+		"description": "Richtet Inhalte innerhalb des direkten Eltern-Containers horizontal und vertikal aus."
+	},
+	"Anchor module": {
+		"prefix": ["anchor"],
+		"body": [
+			":::anchor name=\"${1:uebersicht}\"",
+			""
+		],
+		"description": "Erzeugt ein zusaetzliches Sprungziel mit stabiler Anchor-ID aus Freitext."
+	},
+	"Background color module": {
+		"prefix": ["background-color"],
+		"body": [
+			":::background-color fill=\"${1:#1f1c54}\" accent=\"${2:#5f58d9}\" direction=\"${3|bottom, right,left,top|}\" color=\"${4|dark,light|}\"",
+			"",
+			"### ${5:Kontraststarker Abschnitt}",
+			"${6:Platziere hier Inhalte, die sich vom restlichen Layout abheben sollen.}",
+			"",
+			":::",
+			""
+		],
+		"description": "Markiert Inhaltsbereiche mit Vollton oder Gradient und optional heller Typografie."
+	},
+	"Background image module": {
+		"prefix": ["background-image"],
+		"body": [
+			":::background-image url=\"${1:/img/deco.svg}\" alt=\"${2:Dekorative Grafik (optional)}\" position=\"${3|center,left,right,fill,contain|}\" rotation=\"${4:0}\" width=\"${5:320px}\" fit=\"${6|none,contain,cover,fill,scale-down|}\"",
+			"",
+			"### ${7:Abschnittstitel}",
+			"${8:Beschreibung des Bereichs.}",
+			"",
+			":::",
+			""
+		],
+		"description": "Platziert dekorative Hintergrundgrafiken mit wählbarer Größe und Objekt-Fit."
+	},
+	"Background wave module": {
+		"prefix": ["background-wave"],
+		"body": [
+			":::background-wave algorithm=\"${1|wave,rain|}\" frequency=\"${2:0.6}\" intensity=\"${3:0.5}\" scale=\"${4:1.4}\" zoom=\"${5:1}\" position=\"${6|center,left,right,fill,contain|}\" alt=\"${7:Dekorative Welle (optional)}\"",
+			"",
+			"### ${8:Abschnittstitel}",
+			"${9:Beschreibung des Bereichs.}",
+			"",
+			":::",
+			""
+		],
+		"description": "Animierte Drahtgitter-Welle mit den Bewegungsmodellen wave oder rain."
+	},
+
+	"Caroussel module": {
+		"prefix": ["caroussel"],
+		"body": [
+			":::caroussel display=\"${1|revolver,cut-elements|}\" color=\"${2|light,dark|}\" label=\"${3:Kartenkarussell}\"",
+			"",
+			"### ${4:Erste Karte}",
+			"${5:Beliebiger Markdown-Inhalt.}",
+			"",
+			"---",
+			"",
+			"### ${6:Zweite Karte}",
+			"${7:Weitere Inhalte oder Module.}",
+			"",
+			":::",
+			""
+		],
+		"description": "Karten-Karussell mit display=\"revolver\" (Standard) oder \"cut-elements\"."
+	},
+	"Stacked cards module": {
+		"prefix": ["stacked-cards"],
+		"body": [
+			":::stacked-cards label=\"${1:Leistungsübersicht}\" color=\"${2|light,dark|}\"",
+			"### ${3:Erste Karte}",
+			"${4:Kurzer Beschreibungstext für den ersten Eintrag.}",
+			"",
+			"---",
+			"",
+			"### ${5:Zweite Karte}",
+			"${6:Weitere Informationen oder Listen.}",
+			"",
+			"---",
+			"",
+			"### ${7:Dritte Karte}",
+			"${8:Optional beliebig viele weitere Karten ergänzen.}",
+			"",
+			":::",
+			""
+		],
+		"description": "Versetzter Kartenstapel mit nummerierten Headern und Pfeilnavigation."
+	},
+	"Content block module": {
+		"prefix": ["content-block"],
+		"body": [
+			":::content-block name=\"${1:kontakt}\" vars=\"${2:color=dark}\"",
+			""
+		],
+		"description": "Explizite Einbindung eines Content-Blocks (Alternative zu :::<name>)."
+	},
+	"Content block shortcut": {
+		"prefix": ["block"],
+		"body": [
+			":::${1:block-name}",
+			""
+		],
+		"description": "Bindet src/content-blocks/<name>.md als self-closing Shortcut ein."
+	},
+	"Content block shortcut with children": {
+		"prefix": ["block-wrap"],
+		"body": [
+			":::${1:block-name}",
+			"${2:Inhalt innerhalb des Blocks}",
+			":::",
+			""
+		],
+		"description": "Einbindung fuer Content-Blocks mit deklarierter children-Variable."
+	},
+	"Form module": {
+		"prefix": ["form"],
+		"body": [
+			":::form preset=\"${1:newsletter}\" target-url=\"${2:https://example.com/newsletter-signup}\"",
+			"## ${3:Formular-Headline}",
+			"${4:Kurzer Einleitungstext.}",
+			":::",
+			""
+		],
+		"description": "Rendert ein Formular aus einem HTML-Preset und optionalem Einleitungstext."
+	},
+	"Highlight card module": {
+		"prefix": ["highlight-card"],
+		"body": [
+			":::highlight-card label=\"${1:Mandanten-Update}\" color=\"${2|auto,dark,light|}\" width=\"${3:48rem}\" min-width=\"${4:28rem}\"",
+			"",
+			"## ${5:Sofort verfügbare Wirtschaftsanwält:innen}",
+			"${6:Wir melden uns spätestens am selben Tag mit klarer Empfehlung.}",
+			"",
+			"[${7:Kontakt aufnehmen}](${8:/kontakt})",
+			":::",
+			""
+		],
+		"description": "Hinterlegt Inhalte mit Gradient (dark) oder heller Fläche (light)."
+	},
+	"Page teaser module": {
+		"prefix": ["page-teaser"],
+		"body": [
+			":::page-teaser from=\"${1:personen}\" display=\"cards\" color=\"${2|light,dark|}\" order=\"${3|recent,random,ascending,descending|}\" limit=\"${4:5}\" button=\"${5:Zum Profil}\" label=\"${6:Team im Fokus}\"",
+			"",
+			"1. ${7:/personen/beispiel-profil}",
+			"",
+			"- ${8|Author,Category,Summary|}: ${9:Beispielprofil}",
+			":::"
+		],
+		"description": "Cards-Standard mit fixer Positionierung und optionalem Filter."
+	},
+	"Picture and text module": {
+		"prefix": ["picture-and-text"],
+		"body": [
+			":::picture-and-text display=\"${1|default,highlight-card|}\" align=\"${2|left,right,top,bottom|}\" media-bleed=\"${3|none,outer|}\" image=\"${4:/img/deco-wave.svg}\" image-alt=\"${5:Beschreibender Alt-Text (optional)}\" image-width=\"${6:720}\" image-height=\"${7:430}\" overlay=\"${8|none,gradient-accent-down|}\"",
+			"",
+			"### ${9:KI-Governance ohne Reibungsverluste}",
+			"${10:Wir übersetzen regulatorische Anforderungen in konkrete Projektpläne.}",
+			"",
+			"[${11:Kick-off planen}](${12:/kontakt})",
+			":::",
+			""
+		],
+		"description": "Bild- und Textfläche mit wählbarer Ausrichtung."
+	},
+	"Text over picture module": {
+		"prefix": ["text-over-picture"],
+		"body": [
+			":::text-over-picture image=\"${1:/img/team-demo.jpg}\" image-alt=\"${2:Motivbeschreibung (optional)}\" align-y=\"${3|end,center,start|}\" width=\"${4:720}\" height=\"${5:430}\" overlay=\"${6|none,gradient-accent-down|}\"",
+			"## ${7:Headline direkt auf dem Bild}",
+			"${8:Kurzer Text oder Hinweis.}",
+			"[${9:Mehr erfahren}](${10:/kontakt})",
+			":::",
+			""
+		],
+		"description": "Einzelbild mit überlagertem Inhalt; mehrere Module ohne Leerzeile werden als Zeile gruppiert."
+	},
+	"Quick nav module": {
+		"prefix": ["quick-nav"],
+		"body": [
+			":::quick-nav color=\"${1|dark,light|}\" size=\"${2:2.8rem}\" visible=\"${3:desktop,mobile}\"",
+			"- [${4:/img/people/team-member.jpg}](${5:/personen/ansprechperson} \"${6:Alt-Text (optional)}\")",
+			"- [lucide:${7:phone}](${8:tel:+491751234567})",
+			"- [lucide:${9:mail}](${10:mailto:kontakt@beispiel.de})",
+			":::",
+			""
+		],
+		"description": "Fixe Schnellnavigation mit Bild- oder Lucide-Icons als Link-Liste."
+	},
+	"Tabs module": {
+		"prefix": ["tabs"],
+		"body": [
+			":::tabs color=\"${1|light,dark,transparent-light,transparent-dark|}\"",
+			"### ${2:Kurzüberblick}",
+			"${3:Kurzer Einstieg in das Thema.}",
+			"",
+			"---",
+			"",
+			"### ${4:Details}",
+			"${5:Weitere Inhalte oder Listen.}",
+			":::",
+			""
+		],
+		"description": "Teilt Inhalte in Tabs auf, Abschnitte per --- getrennt."
+	},
+	"Thumb scroll module": {
+		"prefix": ["thumb-scroll"],
+		"body": [
+			":::thumb-scroll label=\"${1:Referenzen}\" color=\"${2|auto,light,dark|}\" overlay=\"${3|none,gradient-accent-down|}\"",
+			"![${4:Hintergrundbild}](${5:/img/team-demo.jpg})",
+			"",
+			"### ${6:Headline}",
+			"${7:Kurzer erläuternder Text.}\n[${8:Kontakt aufnehmen}](${9:/kontakt})",
+			"",
+			"---",
+			"",
+			"### ${10:Weiterer Eintrag}",
+			"${11:Inhalt ohne Bild.}",
+			":::",
+			""
+		],
+		"description": "Slider mit Bild/Text-Kacheln plus Pfeil- und Wischnavigation."
+	},
+	"Typo module": {
+		"prefix": ["typo"],
+		"body": [
+			":::typo class=\"${1|display-1,display-2,text-light,text,fineprint|}\" as=\"${2|div,p,span,h1,h2,h3,h4,h5,h6,strong,em|}\"",
+			"${3:Klarer Beispieltext}",
+			":::",
+			""
+		],
+		"description": "Rendert einen einzelnen Text mit frei wählbarer Typografie-Klasse."
+	},
+	"Split module": {
+		"prefix": ["split"],
+		"body": [
+			":::split",
+			"  ### ${1:Erste Spalte}",
+			"  ${2:Beliebiger Markdown- oder Modulinhalt.}",
+			"  ---",
+			"  <!-- ${3:Optional: Kommentar f\u00fcr Leerspalte} -->",
+			":::",
+			""
+		],
+		"description": "Teilt Inhalte per '---' automatisch in 2-4 Spalten."
+	},
+	"Space module": {
+		"prefix": ["space"],
+		"body": [
+			":::space size=\"${1:4rem}\"",
+			""
+		],
+		"description": "Erzeugt vertikale Freiräume ohne schließendes :::."
+	},
+	"Splash screen module": {
+		"prefix": ["splash-screen"],
+		"body": [
+			":::splash-screen label=\"${1:Willkommen}\" color=\"${2|light,dark|}\" dismiss=\"${3|timer-or-click,timer,click|}\" duration=\"${4:2800}\" exit-animation=\"${5|fade-out|}\" exit-duration=\"${6:520}\"",
+			"<!-- Optional: repeat-after=\\\"1380\\\" zeigt den Splash erst nach 23h erneut -->",
+			"# ${7:Start-Hinweis}",
+			"${8:Kurzer Einführungstext für den Einstieg.}",
+			"<button type=\"button\" data-splash-dismiss>${9:Direkt zur Seite}</button>",
+			":::",
+			""
+		],
+		"description": "Fullscreen-Splash (Slide) mit Timer/Klick, optional repeat-after und Fade-out."
+	},
+	"Right module": {
+		"prefix": ["right"],
+		"body": [
+			":::right label=\"${1:CTA-Bereich}\"",
+			"",
+			"### ${2:Direkter Kontakt}",
+			"${3:Wir melden uns innerhalb von 30 Minuten zurück.}",
+			"",
+			"[${4:Kontakt aufnehmen}](${5:/kontakt})",
+			":::",
+			""
+		],
+		"description": "Richtet Inhalte am rechten Rand aus."
+	},
+	"Link module": {
+		"prefix": ["link"],
+		"body": [
+			":::link to=\"${1:/kontakt}\" text=\"${2:Direkt anfragen}\" style=\"${3|default,cta,outline,destructive|}\" color=\"${4|light,dark|}\" target=\"${5|none,new|}\" align=\"${6|left,center,right|}\"",
+			""
+		],
+		"description": "Erzeugt einen Link/Button mit Style-, Target- und Align-Varianten."
+	},
+	"List module": {
+		"prefix": ["list"],
+		"body": [
+			":::list color=\"${1|auto,light,dark|}\" bullet=\"${2:}\" class=\"${3:}\" bullet-class=\"${4:}\"",
+			"1. **${5:Erster Schritt}**",
+			"   ${6:Kurze Beschreibung zum ersten Schritt.}",
+			"",
+			"2. **${7:Zweiter Schritt}**",
+			"   ${8:Kurze Beschreibung zum zweiten Schritt.}",
+			":::",
+			""
+		],
+		"description": "Formatiert nummerierte Listen als Kartenliste und ungeordnete Listen optional mit Bullet (Text oder Lucide-Icon)."
+	},
+	"Contact form module": {
+		"prefix": ["contact-form"],
+		"body": [
+			":::contact-form heading=\"${1:Kontaktieren Sie uns}\" subheading=\"${2:Beginnen wir noch heute mit der Lösung Ihrer Probleme}\" submit=\"${3:Nachricht absenden}\"",
+			"${4:Beschreiben Sie Ihr Anliegen oder fügen Sie zusätzliche Hinweise hinzu.}",
+			":::"
+		],
+		"description": "Kontaktformular inkl. Standardfeldern."
+	}
+}

@@ -1,0 +1,51 @@
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/typography.scss" as type;
+
+:root {
+	--ui-accent-rule-width: 7.25rem;
+	--ui-accent-rule-height: 0.32rem;
+	--ui-accent-rule-line-box: #{type.$h2-font-size * type.$h2-line-height};
+}
+
+.ui-accent-rule,
+.ui-highlight-rule {
+	display: block;
+	inline-size: var(--ui-accent-rule-width);
+	block-size: var(--ui-accent-rule-height);
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 999px;
+	background: var(--ui-accent-rule-color, var(--color-highlight));
+	flex-shrink: 0;
+}
+
+.accent-rule-module {
+	--accent-rule-before: 0;
+	--accent-rule-after: 0;
+	--accent-rule-color: var(--ui-accent-rule-color, var(--color-highlight));
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	inline-size: var(--ui-accent-rule-width);
+	min-block-size: var(--ui-accent-rule-line-box);
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	flex-shrink: 0;
+	margin-block: var(--accent-rule-before) var(--accent-rule-after);
+}
+
+.accent-rule-module::before {
+	content: "";
+	display: block;
+	inline-size: 100%;
+	block-size: var(--ui-accent-rule-height);
+	border-radius: 999px;
+	background: var(--accent-rule-color);
+}
+
+.accent-rule-module--divider {
+	border: 0;
+}

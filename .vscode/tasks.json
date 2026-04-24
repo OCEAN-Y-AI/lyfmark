@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Install LyfMark VS Code Extension",
+			"type": "shell",
+			"command": "node tools/lyfmark-vscode/install-local-extension.mjs",
+			"problemMatcher": [],
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+			"presentation": {
+				"reveal": "never",
+				"panel": "dedicated",
+				"clear": false
+			}
+		}
+	]
+}

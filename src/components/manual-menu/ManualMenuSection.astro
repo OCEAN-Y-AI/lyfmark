@@ -1,0 +1,164 @@
+---
+import { toMenuToneClass } from "~/components/manual-menu/manual-menu.presentation"
+import type { ManualMenuNode } from "~/components/manual-menu/manual-menu.types"
+import { withBasePath } from "~/utils/path-utils"
+
+interface Props {
+	section: ManualMenuNode
+	basePath: string
+	baseUrl: string
+	menuButtonClasses: readonly string[]
+	isTopLevelSection?: boolean
+	sectionPath?: string
+}
+
+const { section, basePath, baseUrl, menuButtonClasses, isTopLevelSection = false, sectionPath = "" } = Astro.props as Props
+const headingTag = section.depth === 2 ? "h3" : "h4"
+const HeadingTag = headingTag
+const sectionToneClass = toMenuToneClass(section.tone)
+const hasSectionContent = section.links.length > 0 || section.sections.length > 0 || Boolean(section.button) || Boolean(section.content)
+const useMobileSubmenu = isTopLevelSection && hasSectionContent
+const sectionIdSeed = sectionPath.length > 0 ? sectionPath : `line-${section.line}`
+const mobileSectionId = `manual-menu-section-${sectionIdSeed}`
+const mobileSectionPanelId = `${mobileSectionId}-panel`
+const withBase = (pathname: string): string => withBasePath(pathname, basePath, baseUrl)
+---
+
+<li
+	class:list={{
+		"manual-menu__section": true,
+		"manual-menu__section--nested": section.depth > 2,
+		"manual-menu__section--mobile-collapsible": useMobileSubmenu,
+	}}
+	data-manual-menu-section-id={useMobileSubmenu ? mobileSectionId : undefined}
+>
+	{
+		useMobileSubmenu ? (
+			<>
+				<HeadingTag class:list={{ "manual-menu__section-title": true, "manual-menu__section-title--desktop": true, [sectionToneClass]: sectionToneClass.length > 0 }}>
+					{section.label}
+					<span class="ui-highlight-rule" aria-hidden="true"></span>
+				</HeadingTag>
+				<button
+					type="button"
+					class:list={{ "manual-menu__section-mobile-trigger": true, [sectionToneClass]: sectionToneClass.length > 0 }}
+					data-manual-menu-section-open
+					data-manual-menu-section-id={mobileSectionId}
+					aria-controls={mobileSectionPanelId}
+				>
+					<span class="manual-menu__section-mobile-trigger-label">{section.label}</span>
+					<span class="manual-menu__section-mobile-trigger-chevron" aria-hidden="true">›</span>
+				</button>
+			</>
+		) : section.href ? (
+			<a class:list={{ "manual-menu__section-title-link": true, [sectionToneClass]: sectionToneClass.length > 0 }} href={withBase(section.href)}>
+				{section.label}
+				<span class="ui-highlight-rule" aria-hidden="true"></span>
+			</a>
+		) : (
+			<HeadingTag class:list={{ "manual-menu__section-title": true, [sectionToneClass]: sectionToneClass.length > 0 }}>
+				{section.label}
+				<span class="ui-highlight-rule" aria-hidden="true"></span>
+			</HeadingTag>
+		)
+	}
+
+	<div class="manual-menu__section-content" id={useMobileSubmenu ? mobileSectionPanelId : undefined}>
+		{
+			useMobileSubmenu && (
+				<div class="manual-menu__mobile-nav manual-menu__mobile-nav--section">
+					<button
+						type="button"
+						class="manual-menu__back ui-arrow-button ui-arrow-button--outline"
+						data-manual-menu-section-back
+						aria-controls={mobileSectionPanelId}
+						aria-label={`Zurück zu ${section.label}`}
+					>
+						<span aria-hidden="true">←</span>
+					</button>
+					<div class="manual-menu__mobile-nav-heading">
+						<button
+							type="button"
+							class="manual-menu__mobile-title-action"
+							data-manual-menu-section-back
+							aria-controls={mobileSectionPanelId}
+							aria-label={`Zurück zu ${section.label}`}
+						>
+							{section.label}
+						</button>
+						<span class="ui-highlight-rule" aria-hidden="true"></span>
+					</div>
+				</div>
+			)
+		}
+		<ul class="manual-menu__section-content-list" role="list">
+			{
+				section.links.length > 0 && (
+					<li class="manual-menu__section-content-item">
+						<ul class="manual-menu__links" role="list">
+							{
+								section.links.map((link) => {
+									const linkToneClass = toMenuToneClass(link.tone)
+									return (
+										<li class="manual-menu__link-item">
+											<a
+												class:list={{
+													"manual-menu__inline-link": true,
+													[linkToneClass]: linkToneClass.length > 0,
+												}}
+												href={withBase(link.href)}
+											>
+												{link.label}
+											</a>
+										</li>
+									)
+								})
+							}
+						</ul>
+					</li>
+				)
+			}
+
+			{
+				section.button && (
+					<li class="manual-menu__section-content-item manual-menu__section-content-item--button">
+						<p class="manual-menu__button-wrap">
+							<a class:list={menuButtonClasses} href={withBase(section.button.href)}>
+								{section.button.label}
+							</a>
+						</p>
+					</li>
+				)
+			}
+
+			{
+				section.content && (
+					<li class="manual-menu__section-content-item manual-menu__section-content-item--content">
+						<div class="manual-menu__content" set:html={section.content.html}></div>
+					</li>
+				)
+			}
+
+			{
+				section.sections.length > 0 && (
+					<li class="manual-menu__section-content-item">
+						<ul class="manual-menu__subsections" role="list">
+							{
+								section.sections.map((subsection, subsectionIndex) => (
+									<Astro.self
+										section={subsection}
+										basePath={basePath}
+										baseUrl={baseUrl}
+										menuButtonClasses={menuButtonClasses}
+										isTopLevelSection={false}
+										sectionPath={`${sectionIdSeed}-${subsectionIndex}`}
+									/>
+								))
+							}
+						</ul>
+					</li>
+				)
+			}
+		</ul>
+	</div>
+</li>

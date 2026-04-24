@@ -1,0 +1,181 @@
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/typography.scss" as type;
+@use "./page-teaser/display-cards.scss";
+@use "./page-teaser/display-stacked-cards.scss";
+@use "./page-teaser/display-revolver-caroussel.scss";
+@use "./page-teaser/display-template.scss";
+
+.page-teaser {
+	--page-teaser-text: var(--color-dark, #{$color-dark});
+	--page-teaser-surface: var(--color-light, #{$color-light});
+	--page-teaser-surface-strong: var(--color-light-accent, #{$color-light-accent});
+	--page-teaser-border: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-border-strong: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-link-bg: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-link-bg-hover: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-link-text: var(--color-light, #{$color-light});
+	--page-teaser-accent-rule: var(--color-highlight, #{$color-highlight});
+	--content-tone-heading-color: var(--page-teaser-text);
+	--content-tone-body-color: var(--page-teaser-text);
+	--page-teaser-gap: 1rem;
+	--page-teaser-card-row-height: 20.35rem;
+	--page-teaser-featured-height: calc((var(--page-teaser-card-row-height) * 2) + var(--page-teaser-gap));
+	--page-teaser-visible-columns: 2;
+
+	margin: 0;
+	width: 100%;
+	min-width: 0;
+	color: var(--page-teaser-text);
+	container-type: inline-size;
+}
+
+.page-teaser--tone-light {
+	--page-teaser-text: var(--color-dark, #{$color-dark});
+	--page-teaser-surface: var(--color-light, #{$color-light});
+	--page-teaser-surface-strong: var(--color-light-accent, #{$color-light-accent});
+	--page-teaser-border: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-border-strong: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-link-bg: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-link-bg-hover: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-link-text: var(--color-light, #{$color-light});
+}
+
+.page-teaser--tone-dark {
+	--page-teaser-text: var(--color-light, #{$color-light});
+	--page-teaser-surface: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-surface-strong: var(--color-dark-accent, #{$color-dark-accent});
+	--page-teaser-border: var(--color-light, #{$color-light});
+	--page-teaser-border-strong: var(--color-highlight, #{$color-highlight});
+	--page-teaser-link-bg: var(--color-light, #{$color-light});
+	--page-teaser-link-bg-hover: var(--color-light-accent, #{$color-light-accent});
+	--page-teaser-link-text: var(--color-dark, #{$color-dark});
+}
+
+.page-teaser :where(h1, h2, h3, h4, h5, h6, p, li) {
+	color: var(--page-teaser-text);
+}
+
+.page-teaser__viewport {
+	width: 100%;
+	min-width: 0;
+}
+
+.page-teaser__viewport--scrollable {
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-bottom: 0.75rem;
+	scrollbar-gutter: stable both-edges;
+	scroll-snap-type: x proximity;
+}
+
+.page-teaser__viewport--scrollable:focus-visible {
+	outline: 2px solid var(--page-teaser-border-strong);
+	outline-offset: 4px;
+}
+
+.page-teaser__grid {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: var(--page-teaser-gap);
+}
+
+.page-teaser__item {
+	min-width: 0;
+	height: 100%;
+	scroll-snap-align: start;
+}
+
+.page-teaser__card-media {
+	margin: 0;
+	background: var(--page-teaser-surface-strong);
+	overflow: hidden;
+}
+
+.page-teaser__card-media img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	user-select: none;
+	-webkit-user-drag: none;
+	pointer-events: none;
+}
+
+.page-teaser__card-body,
+.page-teaser__template-body {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: clamp(1rem, 2vw, 1.5rem);
+	flex: 1 1 auto;
+	min-height: 0;
+}
+
+.page-teaser__card-title {
+	margin: 0;
+	@include type.text-style($font-family: $font-serif-bold, $font-size: clamp(1.25rem, 2vw, 1.75rem), $font-weight: 700);
+	color: var(--page-teaser-text);
+}
+
+/* Customer-only accent line below each card heading; remove this block when no longer needed. */
+.page-teaser__card-title::after {
+	content: "";
+	display: block;
+	width: 7.25rem;
+	max-width: 100%;
+	height: 0.16rem;
+	margin-top: 0.6rem;
+	border-radius: 999px;
+	background: var(--page-teaser-accent-rule);
+}
+
+.page-teaser__card-summary {
+	margin: 0;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 5;
+	overflow: hidden;
+}
+
+.page-teaser__card-link {
+	align-self: flex-start;
+	margin-top: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.7rem 1rem;
+	border-radius: 999px;
+	border: 1px solid var(--page-teaser-link-bg);
+	background: var(--page-teaser-link-bg);
+	color: var(--page-teaser-link-text);
+	text-decoration: none;
+	@include type.text-style($font-family: $font-sans, $font-size: 15px, $font-weight: 600, $line-height: 1.4);
+}
+
+.page-teaser__card-link:visited {
+	color: var(--page-teaser-link-text);
+	background: var(--page-teaser-link-bg);
+	border-color: var(--page-teaser-link-bg);
+}
+
+.page-teaser__card-link:hover,
+.page-teaser__card-link:focus-visible {
+	background: var(--page-teaser-link-bg-hover);
+	border-color: var(--page-teaser-link-bg-hover);
+}
+
+.page-teaser__card-link:focus-visible {
+	outline: 2px solid var(--page-teaser-border-strong);
+	outline-offset: 3px;
+}
+
+.page-teaser__card-date {
+	margin: 0 0 0 auto;
+	white-space: nowrap;
+	@include type.text-style($font-family: $font-sans, $font-size: 14px, $font-weight: 500, $line-height: 1.3);
+	color: var(--page-teaser-text);
+}

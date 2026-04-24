@@ -1,0 +1,43 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"explorer.excludeGitIgnore": true,
+		"files.exclude": {
+			".astro": true,
+			".cache": true,
+			".git": true,
+			".gitignore": true,
+			".vscode": true,
+			"dist": true,
+			"lyfmark": true,
+			"node_modules": true,
+			"src": true,
+			"tools": true,
+			"docs/internal": true,
+			".prettierrc.cjs": true,
+			"AGENTS.md": true,
+			"astro.config.ts": true,
+			"bugs.md": true,
+			"instructions.md": true,
+			"package-lock.json": true,
+			"package.json": true,
+			"README.md": true,
+			"tasks.md": true,
+			"testcases.md": true,
+			"todo.md": true,
+			"tsconfig.json": true
+		},
+		"search.exclude": {
+			".astro": true,
+			".cache": true,
+			"dist": true,
+			"node_modules": true,
+			"src": true,
+			"tools": true
+		}
+	}
+}

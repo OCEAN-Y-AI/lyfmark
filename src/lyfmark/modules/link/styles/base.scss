@@ -1,0 +1,387 @@
+@use "sass:color";
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/colors.scss" as *;
+
+:root {
+	--ui-link-color: currentColor;
+	--ui-link-visited-color: currentColor;
+	--ui-link-underline-color: #{color.scale($color-dark-accent, $lightness: 18%)};
+	--ui-button-radius: 999px;
+	--ui-button-padding-block: 0.16rem;
+	--ui-button-padding-inline: 1.75rem;
+	--ui-button-font-size: 1rem;
+	--ui-button-font-family: #{$font-sans-bold};
+	--ui-button-font-weight: 700;
+	--ui-button-border-width: 3px;
+
+	/* Default button appearance (gets specialized by color/style modifiers). */
+	--ui-button-bg: #{$color-dark-accent};
+	--ui-button-text: #{$color-light};
+	--ui-button-border-color: #{$color-dark-accent};
+	--ui-button-focus-outline: #{color.scale($color-dark-accent, $lightness: 28%)};
+	--ui-button-shadow: none;
+	--ui-button-shadow-hover: none;
+	--ui-button-shadow-active: none;
+	--ui-button-cta-shadow: none;
+	--ui-button-cta-shadow-hover: none;
+	--ui-button-cta-shadow-active: none;
+	--ui-button-auto-bg: #{$color-dark-accent};
+	--ui-button-auto-text: #{$color-light};
+	--ui-button-auto-border-color: #{$color-dark-accent};
+	--ui-button-auto-cta-shadow: #{0 0.18rem 0 $color-highlight, 0 0.55rem 1.2rem rgba($color-dark, 0.2)};
+	--ui-button-auto-cta-shadow-hover: #{0 0.22rem 0 $color-highlight, 0 0.72rem 1.35rem rgba($color-dark, 0.24)};
+	--ui-button-auto-cta-shadow-active: #{0 0.12rem 0 $color-highlight, 0 0.3rem 0.7rem rgba($color-dark, 0.2)};
+	--ui-button-auto-outline-bg: #{$color-light};
+	--ui-button-auto-outline-text: #{$color-dark-accent};
+	--ui-button-auto-outline-border: #{$color-dark-accent};
+	--ui-button-auto-focus-outline: #{color.scale($color-dark-accent, $lightness: 28%)};
+
+	/* Outline/destructive surface + text. */
+	--ui-button-outline-bg: #{$color-light};
+	--ui-button-outline-text: #{$color-dark-accent};
+	--ui-button-outline-border: #{$color-dark-accent};
+	--ui-button-destructive-border: #{$color-highlight};
+
+	/* Circular arrow button utility (reusable, e.g. menu back controls). */
+	--ui-arrow-button-size: 3rem;
+	--ui-arrow-button-border-width: 2px;
+	--ui-arrow-button-bg: #{$color-dark-accent};
+	--ui-arrow-button-text: #{$color-light};
+	--ui-arrow-button-border-color: #{$color-dark-accent};
+	--ui-arrow-button-outline-bg: transparent;
+	--ui-arrow-button-outline-text: #{$color-dark-accent};
+	--ui-arrow-button-outline-border: #{$color-dark-accent};
+	--ui-arrow-button-focus-outline: #{color.scale($color-dark-accent, $lightness: 28%)};
+	--ui-arrow-group-gap: 0.75rem;
+	--ui-arrow-group-padding: 0;
+	--ui-arrow-group-radius: 999px;
+	--ui-arrow-group-bg: transparent;
+	--ui-arrow-group-border-color: transparent;
+	--ui-arrow-group-shadow: none;
+}
+
+a {
+	color: var(--ui-link-color);
+	text-decoration-line: underline;
+	text-decoration-thickness: 0.08em;
+	text-underline-offset: 0.14em;
+	text-decoration-color: var(--ui-link-underline-color);
+	transition: color 140ms ease, text-decoration-thickness 140ms ease;
+}
+
+a:visited {
+	color: var(--ui-link-visited-color);
+}
+
+a:hover,
+
+a:focus-visible {
+	text-decoration-thickness: 0.12em;
+}
+
+a:focus-visible {
+	outline: 2px solid color.scale($color-dark-accent, $lightness: 20%);
+	outline-offset: 2px;
+}
+
+.link-module {
+	display: flex;
+	width: 100%;
+	margin: 1rem 0;
+
+	&--align-left {
+		justify-content: flex-start;
+	}
+
+	&--align-center {
+		justify-content: center;
+	}
+
+	&--align-right {
+		justify-content: flex-end;
+	}
+}
+
+.link-module-row {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.link-module-row > .link-module {
+	width: auto;
+	margin: 0;
+}
+
+.link-module__link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ui-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	padding: var(--ui-button-padding-block) var(--ui-button-padding-inline);
+	border-radius: var(--ui-button-radius);
+	border: var(--ui-button-border-width) solid var(--ui-button-border-color);
+	background: var(--ui-button-bg);
+	color: var(--ui-button-text);
+	font-family: var(--ui-button-font-family);
+	font-size: var(--ui-button-font-size);
+	font-weight: var(--ui-button-font-weight);
+	line-height: 1.2;
+	text-decoration: none;
+	box-shadow: var(--ui-button-shadow);
+	transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.ui-button:visited {
+	color: var(--ui-button-text);
+}
+
+.ui-button:hover,
+.ui-button:focus-visible {
+	transform: translateY(-1px);
+	box-shadow: var(--ui-button-shadow-hover);
+}
+
+.ui-button:active {
+	transform: translateY(0);
+	box-shadow: var(--ui-button-shadow-active);
+}
+
+.ui-button:focus-visible {
+	outline: 2px solid var(--ui-button-focus-outline);
+	outline-offset: 2px;
+}
+
+.ui-button--light {
+	--ui-button-bg: #{$color-dark-accent};
+	--ui-button-text: #{$color-light};
+	--ui-button-border-color: #{$color-dark-accent};
+	--ui-button-shadow: none;
+	--ui-button-shadow-hover: none;
+	--ui-button-shadow-active: none;
+	--ui-button-cta-shadow: #{0 0.18rem 0 $color-highlight, 0 0.55rem 1.2rem rgba($color-dark, 0.2)};
+	--ui-button-cta-shadow-hover: #{0 0.22rem 0 $color-highlight, 0 0.72rem 1.35rem rgba($color-dark, 0.24)};
+	--ui-button-cta-shadow-active: #{0 0.12rem 0 $color-highlight, 0 0.3rem 0.7rem rgba($color-dark, 0.2)};
+	--ui-button-outline-bg: #{$color-light};
+	--ui-button-outline-text: #{$color-dark-accent};
+	--ui-button-outline-border: #{$color-dark-accent};
+	--ui-button-focus-outline: #{color.scale($color-dark-accent, $lightness: 28%)};
+}
+
+.ui-button--dark {
+	--ui-button-bg: #{$color-light};
+	--ui-button-text: #{$color-dark-accent};
+	--ui-button-border-color: #{$color-dark-accent};
+	--ui-button-shadow: none;
+	--ui-button-shadow-hover: none;
+	--ui-button-shadow-active: none;
+	--ui-button-cta-shadow: #{0 0.18rem 0 $color-highlight, 0 0.55rem 1.2rem rgba($color-dark, 0.2)};
+	--ui-button-cta-shadow-hover: #{0 0.22rem 0 $color-highlight, 0 0.72rem 1.35rem rgba($color-dark, 0.24)};
+	--ui-button-cta-shadow-active: #{0 0.12rem 0 $color-highlight, 0 0.3rem 0.7rem rgba($color-dark, 0.2)};
+	--ui-button-outline-bg: #{$color-dark-accent};
+	--ui-button-outline-text: #{$color-light};
+	--ui-button-outline-border: #{$color-light};
+	--ui-button-focus-outline: #{color.scale($color-light, $lightness: -8%)};
+}
+
+:where(
+	.highlight-card--tone-light,
+	.background-color-module--tone-light,
+	.tabs-module--tone-light,
+	.tabs-module--tone-transparent-light,
+	.text-over-picture--tone-light,
+	.splash-screen--tone-light,
+	.page-teaser--tone-light,
+	.thumb-scroll--light,
+	.stacked-cards--tone-light,
+	.caroussel--tone-light
+) {
+	--ui-button-auto-bg: #{$color-dark-accent};
+	--ui-button-auto-text: #{$color-light};
+	--ui-button-auto-border-color: #{$color-dark-accent};
+	--ui-button-auto-cta-shadow: #{0 0.18rem 0 $color-highlight, 0 0.55rem 1.2rem rgba($color-dark, 0.2)};
+	--ui-button-auto-cta-shadow-hover: #{0 0.22rem 0 $color-highlight, 0 0.72rem 1.35rem rgba($color-dark, 0.24)};
+	--ui-button-auto-cta-shadow-active: #{0 0.12rem 0 $color-highlight, 0 0.3rem 0.7rem rgba($color-dark, 0.2)};
+	--ui-button-auto-outline-bg: #{$color-light};
+	--ui-button-auto-outline-text: #{$color-dark-accent};
+	--ui-button-auto-outline-border: #{$color-dark-accent};
+	--ui-button-auto-focus-outline: #{color.scale($color-dark-accent, $lightness: 28%)};
+}
+
+:where(
+	.highlight-card--tone-dark,
+	.background-color-module--tone-dark,
+	.tabs-module--tone-dark,
+	.tabs-module--tone-transparent-dark,
+	.text-over-picture--tone-dark,
+	.splash-screen--tone-dark,
+	.page-teaser--tone-dark,
+	.thumb-scroll--dark,
+	.stacked-cards--tone-dark,
+	.caroussel--tone-dark,
+	.manual-menu--panel-dark
+) {
+	--ui-button-auto-bg: #{$color-light};
+	--ui-button-auto-text: #{$color-dark-accent};
+	--ui-button-auto-border-color: #{$color-dark-accent};
+	--ui-button-auto-cta-shadow: #{0 0.18rem 0 $color-highlight, 0 0.55rem 1.2rem rgba($color-dark, 0.2)};
+	--ui-button-auto-cta-shadow-hover: #{0 0.22rem 0 $color-highlight, 0 0.72rem 1.35rem rgba($color-dark, 0.24)};
+	--ui-button-auto-cta-shadow-active: #{0 0.12rem 0 $color-highlight, 0 0.3rem 0.7rem rgba($color-dark, 0.2)};
+	--ui-button-auto-outline-bg: #{$color-dark-accent};
+	--ui-button-auto-outline-text: #{$color-light};
+	--ui-button-auto-outline-border: #{$color-light};
+	--ui-button-auto-focus-outline: #{color.scale($color-light, $lightness: -8%)};
+}
+
+.ui-button--auto {
+	--ui-button-bg: var(--ui-button-auto-bg);
+	--ui-button-text: var(--ui-button-auto-text);
+	--ui-button-border-color: var(--ui-button-auto-border-color);
+	--ui-button-shadow: none;
+	--ui-button-shadow-hover: none;
+	--ui-button-shadow-active: none;
+	--ui-button-cta-shadow: var(--ui-button-auto-cta-shadow);
+	--ui-button-cta-shadow-hover: var(--ui-button-auto-cta-shadow-hover);
+	--ui-button-cta-shadow-active: var(--ui-button-auto-cta-shadow-active);
+	--ui-button-outline-bg: var(--ui-button-auto-outline-bg);
+	--ui-button-outline-text: var(--ui-button-auto-outline-text);
+	--ui-button-outline-border: var(--ui-button-auto-outline-border);
+	--ui-button-focus-outline: var(--ui-button-auto-focus-outline);
+}
+
+.ui-button--cta {
+	--ui-button-shadow: var(--ui-button-cta-shadow);
+	--ui-button-shadow-hover: var(--ui-button-cta-shadow-hover);
+	--ui-button-shadow-active: var(--ui-button-cta-shadow-active);
+	border: 0;
+}
+
+.ui-button--outline {
+	background: none;
+	border-color: var(--ui-button-outline-border);
+	color: var(--ui-button-outline-text);
+	box-shadow: none;
+}
+
+.ui-button--outline:visited {
+	color: var(--ui-button-outline-text);
+}
+
+.ui-button--outline:hover,
+.ui-button--outline:focus-visible {
+	background: var(--ui-button-outline-bg);
+	box-shadow: none;
+}
+
+.ui-button--destructive {
+	background: var(--ui-button-outline-bg);
+	border-color: var(--ui-button-destructive-border);
+	color: var(--ui-button-outline-text);
+	box-shadow: none;
+}
+
+.ui-button--destructive:visited {
+	color: var(--ui-button-outline-text);
+}
+
+.ui-button--destructive:hover,
+.ui-button--destructive:focus-visible {
+	background: var(--ui-button-outline-bg);
+	box-shadow: none;
+}
+
+.ui-button--pill {
+	--ui-button-radius: 999px;
+}
+
+.ui-arrow-group {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--ui-arrow-group-gap);
+	inline-size: fit-content;
+	padding: var(--ui-arrow-group-padding);
+	border-radius: var(--ui-arrow-group-radius);
+	background: var(--ui-arrow-group-bg);
+	border: 1px solid var(--ui-arrow-group-border-color);
+	box-shadow: var(--ui-arrow-group-shadow);
+}
+
+.ui-arrow-group > .ui-arrow-button {
+	flex: 0 0 auto;
+}
+
+.ui-arrow-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: var(--ui-arrow-button-size);
+	block-size: var(--ui-arrow-button-size);
+	padding: 0;
+	border-radius: 999px;
+	border: var(--ui-arrow-button-border-width) solid var(--ui-arrow-button-border-color);
+	background: var(--ui-arrow-button-bg);
+	color: var(--ui-arrow-button-text);
+	font: inherit;
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+	cursor: pointer;
+	transition: transform 140ms ease, background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.ui-arrow-button:visited {
+	color: var(--ui-arrow-button-text);
+}
+
+.ui-arrow-button:hover,
+.ui-arrow-button:focus-visible {
+	transform: translateY(-1px);
+}
+
+.ui-arrow-button:active {
+	transform: translateY(0);
+}
+
+.ui-arrow-button:focus-visible {
+	outline: 2px solid var(--ui-arrow-button-focus-outline);
+	outline-offset: 2px;
+}
+
+.ui-arrow-button > span {
+	font-size: 1.3rem;
+	line-height: 1;
+}
+
+.ui-arrow-button--outline {
+	background: var(--ui-arrow-button-outline-bg);
+	color: var(--ui-arrow-button-outline-text);
+	border-color: var(--ui-arrow-button-outline-border);
+}
+
+.ui-arrow-button--outline:visited {
+	color: var(--ui-arrow-button-outline-text);
+}
+
+.ui-arrow-button--solid {
+	background: var(--ui-arrow-button-bg);
+	color: var(--ui-arrow-button-text);
+	border-color: var(--ui-arrow-button-border-color);
+}
+
+/* Backward compatibility for older class names */
+.link-module__link.button-outline {
+	@extend .ui-button--outline;
+}
+
+.link-module__link.button-destructive {
+	@extend .ui-button--destructive;
+}

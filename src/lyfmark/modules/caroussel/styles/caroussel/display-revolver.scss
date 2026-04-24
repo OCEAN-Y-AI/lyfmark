@@ -1,0 +1,178 @@
+.caroussel--display-revolver {
+	--caroussel-revolver-card-width: min(42rem, 100%);
+	--caroussel-revolver-card-base-height: auto;
+	--caroussel-revolver-overflow-pad: 1.5rem;
+	--caroussel-revolver-offset: clamp(4.8rem, 15vw, 11rem);
+	--caroussel-revolver-exit-shift: clamp(1.1rem, 3vw, 2.4rem);
+	--caroussel-revolver-side-opacity: 0.9;
+
+	overflow: visible;
+}
+
+.caroussel--display-revolver .caroussel__viewport {
+	overflow: hidden;
+	padding: var(--caroussel-revolver-overflow-pad) 0.25rem 0.65rem;
+	cursor: grab;
+	perspective: 1200px;
+}
+
+.caroussel--display-revolver .caroussel__track {
+	position: relative;
+	min-height: 1px;
+	isolation: isolate;
+}
+
+.caroussel--display-revolver .caroussel__slide {
+	position: absolute;
+	left: 50%;
+	top: 0;
+	width: var(--caroussel-revolver-card-width);
+	max-width: 100%;
+	pointer-events: none;
+	opacity: 0;
+	filter: blur(1.1px);
+	transform-origin: center center;
+	transform-style: preserve-3d;
+	transform: translate3d(-50%, 0, -140px) scale(var(--caroussel-revolver-hidden-scale));
+	transition:
+		transform var(--caroussel-revolver-transition-duration) var(--caroussel-revolver-transition-ease),
+		opacity var(--caroussel-revolver-transition-duration) var(--caroussel-revolver-transition-ease),
+		filter var(--caroussel-revolver-transition-duration) var(--caroussel-revolver-transition-ease);
+	will-change: transform, opacity, filter;
+}
+
+.caroussel--display-revolver .caroussel__slide[data-caroussel-state="center"] {
+	z-index: 4;
+	opacity: 1;
+	filter: none;
+	pointer-events: auto;
+	transform: translate3d(-50%, 0, 0) scale(1.1);
+}
+
+.caroussel--display-revolver .caroussel__slide[data-caroussel-state="left"] {
+	z-index: 3;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% - var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver .caroussel__slide[data-caroussel-state="right"] {
+	z-index: 3;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% + var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver .caroussel__slide[data-caroussel-state="left-exit"] {
+	z-index: 2;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% - var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver .caroussel__slide[data-caroussel-state="right-exit"] {
+	z-index: 2;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% + var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver .caroussel__slide[data-caroussel-state="enter-right"] {
+	z-index: 1;
+	opacity: 0;
+	filter: blur(1px);
+	transform: translate3d(calc(-50% + var(--caroussel-revolver-offset)), 0, -170px)
+		scale(0.8);
+}
+
+.caroussel--display-revolver .caroussel__slide[data-caroussel-state="enter-left"] {
+	z-index: 1;
+	opacity: 0;
+	filter: blur(1px);
+	transform: translate3d(calc(-50% - var(--caroussel-revolver-offset)), 0, -170px)
+		scale(0.8);
+}
+
+.caroussel--display-revolver.caroussel--animating-next .caroussel__slide[data-caroussel-state="center"] {
+	z-index: 3;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% - var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver.caroussel--animating-next .caroussel__slide[data-caroussel-state="right"] {
+	z-index: 4;
+	opacity: 1;
+	filter: none;
+	transform: translate3d(-50%, 0, 0) scale(1.1);
+}
+
+.caroussel--display-revolver.caroussel--animating-next .caroussel__slide[data-caroussel-state="left-exit"] {
+	z-index: 1;
+	opacity: 0;
+	filter: blur(1.2px);
+	transform: translate3d(calc(-50% - var(--caroussel-revolver-offset) + var(--caroussel-revolver-exit-shift)), 0, -180px)
+		scale(0.8);
+}
+
+.caroussel--display-revolver.caroussel--animating-next .caroussel__slide[data-caroussel-state="enter-right"] {
+	z-index: 2;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% + var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver.caroussel--animating-prev .caroussel__slide[data-caroussel-state="center"] {
+	z-index: 3;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% + var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver.caroussel--animating-prev .caroussel__slide[data-caroussel-state="left"] {
+	z-index: 4;
+	opacity: 1;
+	filter: none;
+	transform: translate3d(-50%, 0, 0) scale(1.1);
+}
+
+.caroussel--display-revolver.caroussel--animating-prev .caroussel__slide[data-caroussel-state="right-exit"] {
+	z-index: 1;
+	opacity: 0;
+	filter: blur(1.2px);
+	transform: translate3d(calc(-50% + var(--caroussel-revolver-offset) - var(--caroussel-revolver-exit-shift)), 0, -180px)
+		scale(0.8);
+}
+
+.caroussel--display-revolver.caroussel--animating-prev .caroussel__slide[data-caroussel-state="enter-left"] {
+	z-index: 2;
+	opacity: var(--caroussel-revolver-side-opacity);
+	filter: blur(0.45px);
+	transform: translate3d(calc(-50% - var(--caroussel-revolver-offset)), 0, -100px)
+		scale(1);
+}
+
+.caroussel--display-revolver .caroussel__card {
+	height: var(--caroussel-revolver-card-base-height);
+	min-height: var(--caroussel-revolver-card-base-height);
+}
+
+@media (max-width: 52rem) {
+	.caroussel--display-revolver {
+		--caroussel-revolver-offset: clamp(3.4rem, 12vw, 6.6rem);
+		--caroussel-revolver-card-width: min(32rem, 100%);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.caroussel--display-revolver .caroussel__slide {
+		transition: none;
+	}
+}

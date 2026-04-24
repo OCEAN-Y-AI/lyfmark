@@ -1,0 +1,128 @@
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+
+.text-over-picture-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 1rem;
+	inline-size: 100%;
+	margin: 1rem 0;
+}
+
+.text-over-picture-row > .text-over-picture {
+	margin: 0;
+}
+
+.text-over-picture {
+	--text-over-picture-width: auto;
+	--text-over-picture-height: auto;
+	--text-over-picture-overlay: none;
+	--text-over-picture-align-y: flex-end;
+	--text-over-picture-heading-color: #{$color-dark};
+	--text-over-picture-body-color: #{$color-dark};
+
+	position: relative;
+	display: flex;
+	max-inline-size: 100%;
+	margin: 1rem 0;
+	border-radius: 40px;
+	overflow: hidden;
+	isolation: isolate;
+}
+
+.text-over-picture--fixed-size {
+	inline-size: var(--text-over-picture-width);
+	block-size: var(--text-over-picture-height);
+}
+
+.text-over-picture__media {
+	position: relative;
+	display: block;
+	max-inline-size: 100%;
+	margin: 0;
+}
+
+.text-over-picture--fixed-size .text-over-picture__media {
+	inline-size: 100%;
+	block-size: 100%;
+}
+
+.text-over-picture__media::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	pointer-events: none;
+	background: var(--text-over-picture-overlay);
+}
+
+.text-over-picture__media > :not(.background-image-layer) {
+	position: relative;
+	z-index: 1;
+}
+
+.text-over-picture__media img {
+	display: block;
+	max-inline-size: 100%;
+	block-size: auto;
+}
+
+.text-over-picture--fixed-size .text-over-picture__media img {
+	inline-size: 100%;
+	block-size: 100%;
+}
+
+.text-over-picture[data-bg-image-layer] > .text-over-picture__content {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	justify-content: var(--text-over-picture-align-y);
+	gap: 0;
+	padding: 1rem;
+	background: transparent;
+}
+
+.text-over-picture__content > :first-child {
+	margin-top: 0;
+}
+
+.text-over-picture__content > :last-child {
+	margin-bottom: 0;
+}
+
+.text-over-picture__content :where(h1, h2, h3, h4, h5, h6) {
+	color: var(--text-over-picture-heading-color);
+}
+
+.text-over-picture__content :where(p, li, blockquote) {
+	color: var(--text-over-picture-body-color);
+}
+
+.text-over-picture__content :where(p) {
+	margin: 0;
+}
+
+.text-over-picture--tone-light {
+	--text-over-picture-heading-color: #{$color-dark};
+	--text-over-picture-body-color: #{$color-dark};
+}
+
+.text-over-picture--tone-dark {
+	--text-over-picture-heading-color: #{$color-light};
+	--text-over-picture-body-color: #{$color-light};
+}
+
+.text-over-picture--align-start {
+	--text-over-picture-align-y: flex-start;
+}
+
+.text-over-picture--align-center {
+	--text-over-picture-align-y: center;
+}
+
+.text-over-picture--align-end {
+	--text-over-picture-align-y: flex-end;
+}

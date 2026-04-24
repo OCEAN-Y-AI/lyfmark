@@ -1,0 +1,157 @@
+---
+import { siteConfig } from "~/config/site"
+
+const baseUrl = import.meta.env.BASE_URL
+const SAFE_REDIRECT_PROTOCOL_PATTERN = /^(https?:\/\/|mailto:|tel:)/i
+const UNSAFE_REDIRECT_PROTOCOL_PATTERN = /^(javascript:|data:|vbscript:)/i
+
+interface Props {
+	title?: string
+	description?: string
+	redirectTo?: string
+	redirectStatus?: number | string
+	frontmatter?: {
+		title?: string
+		description?: string
+		redirectTo?: string
+		redirectStatus?: number | string
+	}
+}
+
+const {
+	title: directTitle,
+	description: directDescription,
+	redirectTo: directRedirectTo,
+	redirectStatus: directRedirectStatus,
+	frontmatter,
+} = Astro.props as Props
+
+const redirectToRawValue =
+	typeof directRedirectTo === "string" && directRedirectTo.trim().length > 0
+		? directRedirectTo.trim()
+		: typeof frontmatter?.redirectTo === "string" && frontmatter.redirectTo.trim().length > 0
+			? frontmatter.redirectTo.trim()
+			: ""
+
+if (redirectToRawValue.length === 0) {
+	throw new Error(
+		`redirect-layout: Bitte setze im Frontmatter "redirectTo", z. B. redirectTo: "/neue-url".`,
+	)
+}
+
+if (UNSAFE_REDIRECT_PROTOCOL_PATTERN.test(redirectToRawValue)) {
+	throw new Error(`redirect-layout: Unsicheres Redirect-Ziel "${redirectToRawValue}".`)
+}
+
+if (
+	!redirectToRawValue.startsWith("/") &&
+	!redirectToRawValue.startsWith("./") &&
+	!redirectToRawValue.startsWith("../") &&
+	!SAFE_REDIRECT_PROTOCOL_PATTERN.test(redirectToRawValue)
+) {
+	throw new Error(
+		`redirect-layout: "redirectTo" muss mit "/", "./", "../", "http(s)://", "mailto:" oder "tel:" beginnen.`,
+	)
+}
+
+const normalizedBasePath = (() => {
+	const trimmed = baseUrl.trim()
+	if (trimmed === "/" || trimmed.length === 0) {
+		return ""
+	}
+	return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed
+})()
+
+const resolveRedirectTarget = (rawTarget: string): string => {
+	if (SAFE_REDIRECT_PROTOCOL_PATTERN.test(rawTarget)) {
+		return rawTarget
+	}
+	if (rawTarget.startsWith("./") || rawTarget.startsWith("../")) {
+		return rawTarget
+	}
+	if (rawTarget.startsWith("/") && normalizedBasePath.length > 0) {
+		if (rawTarget === normalizedBasePath || rawTarget.startsWith(`${normalizedBasePath}/`)) {
+			return rawTarget
+		}
+		return `${normalizedBasePath}${rawTarget}`
+	}
+	return rawTarget
+}
+
+const resolvedRedirectTarget = resolveRedirectTarget(redirectToRawValue)
+
+const resolvedStatusCandidate = directRedirectStatus ?? frontmatter?.redirectStatus
+const parsedStatus =
+	typeof resolvedStatusCandidate === "number"
+		? resolvedStatusCandidate
+		: typeof resolvedStatusCandidate === "string"
+			? Number.parseInt(resolvedStatusCandidate, 10)
+			: NaN
+
+const resolvedStatus = Number.isFinite(parsedStatus) ? parsedStatus : 301
+if (![301, 302, 307, 308].includes(resolvedStatus)) {
+	throw new Error(`redirect-layout: "redirectStatus" erlaubt nur 301, 302, 307 oder 308.`)
+}
+
+const resolvedTitle =
+	typeof directTitle === "string" && directTitle.trim().length > 0
+		? directTitle.trim()
+		: typeof frontmatter?.title === "string" && frontmatter.title.trim().length > 0
+			? frontmatter.title.trim()
+			: "Weiterleitung"
+
+const resolvedDescription =
+	typeof directDescription === "string" && directDescription.trim().length > 0
+		? directDescription.trim()
+		: typeof frontmatter?.description === "string" && frontmatter.description.trim().length > 0
+			? frontmatter.description.trim()
+			: `Diese Seite wurde verschoben und leitet zu ${resolvedRedirectTarget} weiter.`
+---
+
+<!doctype html>
+<html lang={siteConfig.defaultLocale}>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="robots" content="noindex, follow" />
+		<meta http-equiv="refresh" content={`0;url=${resolvedRedirectTarget}`} />
+		<link rel="canonical" href={resolvedRedirectTarget} />
+		<title>{resolvedTitle}</title>
+		<meta name="description" content={resolvedDescription} />
+	</head>
+	<body class="redirect-layout">
+		<main class="redirect-layout__content">
+			<h1>{resolvedTitle}</h1>
+			<p>Diese Seite wurde verschoben. Sie werden jetzt automatisch weitergeleitet.</p>
+			<p>
+				Falls die Weiterleitung nicht startet, nutzen Sie bitte diesen Link:
+				<a href={resolvedRedirectTarget}>{resolvedRedirectTarget}</a>
+			</p>
+		</main>
+		<script is:inline define:vars={{ resolvedRedirectTarget }}>
+			window.location.replace(resolvedRedirectTarget)
+		</script>
+	</body>
+</html>
+
+<style>
+	html,
+	body {
+		margin: 0;
+		padding: 0;
+	}
+
+	body.redirect-layout {
+		min-height: 100vh;
+		display: grid;
+		place-items: center;
+		font-family: "Segoe UI", Arial, sans-serif;
+		background: #f7f7f7;
+		color: #1a1a1a;
+	}
+
+	.redirect-layout__content {
+		max-width: 44rem;
+		padding: 2rem;
+	}
+</style>

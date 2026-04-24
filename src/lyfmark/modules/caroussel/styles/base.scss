@@ -1,0 +1,212 @@
+@use "sass:color";
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+@use "./caroussel/display-cut-elements.scss";
+@use "./caroussel/display-revolver.scss";
+
+.caroussel {
+	--caroussel-text: #{$color-dark};
+	--caroussel-background: #{$color-light};
+	--caroussel-border-color: none;
+	--caroussel-border-width: 3px;
+	--caroussel-arrow-outline: #{$color-dark-accent};
+
+	--caroussel-card-text: var(--caroussel-text);
+	--caroussel-card-background: #{$color-light};
+	--caroussel-card-border-color: #{$color-dark-accent};
+	--caroussel-card-border-width: 3px;
+	--caroussel-active-card-text: #{$color-light};
+	--caroussel-active-card-background: var(--color-dark-accent, #{$color-dark-accent});
+	--caroussel-active-card-border-width: 3px;
+	--caroussel-active-card-border-color: transparent;
+	--caroussel-active-accent-color: #{$color-highlight};
+
+	--caroussel-revolver-side-scale: 1;
+	--caroussel-revolver-hidden-scale: 0.8;
+	--caroussel-revolver-transition-duration: 420ms;
+	--caroussel-revolver-transition-ease: cubic-bezier(0.24, 0.72, 0.2, 1);
+
+	margin: 2rem 0;
+	padding: clamp(1.25rem, 3vw, 2.25rem);
+	color: var(--caroussel-text);
+	border-radius: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	border: var(--caroussel-border-width) solid var(--caroussel-border-color);
+	background: var(--caroussel-background);
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	p {
+		color: var(--caroussel-text);
+	}
+}
+
+.caroussel--tone-dark {
+	--caroussel-text: #{$color-light};
+	--caroussel-background: var(--color-dark-accent, #{$color-dark-accent});
+	--caroussel-border-width: 0px;
+	--caroussel-border-color: transparent;
+
+	--caroussel-card-text: #{$color-light};
+	--caroussel-card-background: var(--color-dark-accent, #{$color-dark-accent});
+	--caroussel-card-border-width: 3px;
+	--caroussel-card-border-color: transparent;
+	--caroussel-active-card-text: #{$color-dark};
+	--caroussel-active-card-background: #{$color-light};
+	--caroussel-active-card-border-width: 3px;
+	--caroussel-active-card-border-color: #{$color-dark-accent};
+	--caroussel-active-accent-color: #{$color-highlight};
+}
+
+.caroussel__viewport {
+	min-width: 0;
+	max-width: 100%;
+	width: 100%;
+	touch-action: pan-y;
+	outline: 2px solid transparent;
+	outline-offset: 4px;
+}
+
+.caroussel__viewport:focus-visible {
+	outline-color: var(--caroussel-arrow-outline);
+}
+
+.caroussel__viewport--dragging {
+	cursor: grabbing;
+}
+
+.caroussel--dragging {
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.caroussel__track {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.caroussel__slide {
+	box-sizing: border-box;
+}
+
+.caroussel__card {
+	--caroussel-card-padding: clamp(1rem, 2.5vw, 1.75rem);
+	color: var(--caroussel-card-text);
+	border-radius: 1rem;
+	padding: var(--caroussel-card-padding);
+	min-height: 9rem;
+	border: var(--caroussel-card-border-width) solid var(--caroussel-card-border-color);
+	background: var(--caroussel-card-background);
+	overflow: hidden;
+}
+
+.caroussel__card :is(h1, h2, h3, h4, h5, h6, p, li) {
+	color: inherit;
+}
+
+.caroussel__slide--active .caroussel__card {
+	color: var(--caroussel-active-card-text);
+	border-width: var(--caroussel-active-card-border-width);
+	border-color: var(--caroussel-active-card-border-color);
+	background: var(--caroussel-active-card-background);
+	--ui-accent-rule-color: var(--caroussel-active-accent-color);
+}
+
+.caroussel__card-content {
+	--picture-parent-bleed-inline: var(--caroussel-card-padding);
+	--picture-parent-bleed-block: var(--caroussel-card-padding);
+	display: flex;
+	flex-direction: column;
+}
+
+.caroussel__controls {
+	margin-top: 0.5rem;
+}
+
+.caroussel--display-cut-elements .caroussel__controls {
+	justify-content: center;
+}
+
+.caroussel--display-revolver .caroussel__controls {
+	justify-content: flex-start;
+}
+
+.caroussel--tone-dark .caroussel__controls {
+	--ui-arrow-group-padding: 0.3rem;
+	--ui-arrow-group-bg: #{$color-light};
+	--ui-arrow-group-border-color: #{$color-light};
+	--ui-arrow-group-shadow: 0 0.45rem 1rem rgba($color-dark, 0.35);
+}
+
+.caroussel__arrow {
+	box-shadow: 0 0.3rem 0.8rem rgba($color-dark, 0.15);
+}
+
+.caroussel__arrow--prev {
+	--ui-arrow-button-bg: #{$color-light};
+	--ui-arrow-button-text: #{$color-dark-accent};
+	--ui-arrow-button-border-color: #{$color-dark-accent};
+}
+
+.caroussel__arrow--next {
+	--ui-arrow-button-bg: #{$color-dark-accent};
+	--ui-arrow-button-text: #{$color-light};
+	--ui-arrow-button-border-color: #{$color-light};
+}
+
+.caroussel__arrow:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+.caroussel__arrow:not(:disabled):hover {
+	box-shadow: 0 0.4rem 1rem rgba($color-dark, 0.25);
+}
+
+.caroussel__arrow span {
+	pointer-events: none;
+}
+
+.caroussel--tone-light .caroussel__slide--active .ui-button--light,
+.caroussel--tone-light .caroussel__slide--active .ui-button--auto,
+.caroussel--tone-dark .caroussel__slide--active .ui-button--dark {
+	--ui-button-bg: #{$color-light};
+	--ui-button-text: #{$color-dark-accent};
+	--ui-button-border-color: #{$color-dark-accent};
+	--ui-button-shadow: none;
+	--ui-button-shadow-hover: none;
+	--ui-button-shadow-active: none;
+	--ui-button-outline-bg: #{$color-dark-accent};
+	--ui-button-outline-text: #{$color-light};
+	--ui-button-outline-border: #{$color-light};
+	--ui-button-focus-outline: #{color.scale($color-light, $lightness: -8%)};
+}
+
+.caroussel--tone-light .caroussel__slide--active .ui-button--dark,
+.caroussel--tone-dark .caroussel__slide--active .ui-button--light {
+	--ui-button-bg: #{$color-dark-accent};
+	--ui-button-text: #{$color-light};
+	--ui-button-border-color: #{$color-dark-accent};
+	--ui-button-shadow: none;
+	--ui-button-shadow-hover: none;
+	--ui-button-shadow-active: none;
+	--ui-button-outline-bg: #{$color-light};
+	--ui-button-outline-text: #{$color-dark-accent};
+	--ui-button-outline-border: #{$color-dark-accent};
+	--ui-button-focus-outline: #{color.scale($color-dark-accent, $lightness: 28%)};
+}
+
+.caroussel * {
+	box-sizing: border-box;
+}

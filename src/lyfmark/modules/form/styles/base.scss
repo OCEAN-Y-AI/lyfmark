@@ -1,0 +1,104 @@
+@use "sass:color";
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/typography.scss" as type;
+
+.form-module {
+	width: 100%;
+	min-width: 0;
+	margin: 1.5rem 0;
+	padding: clamp(1.2rem, 2.2vw, 1.8rem);
+	border-radius: 2rem;
+	background: $color-light;
+	color: $color-dark-accent;
+	display: flex;
+	flex-direction: column;
+	gap: 1.1rem;
+}
+
+.form-module__content {
+	color: inherit;
+}
+
+.form-module__content > :first-child {
+	margin-top: 0;
+}
+
+.form-module__content > :last-child {
+	margin-bottom: 0;
+}
+
+.form-module__content :where(h1, h2, h3, h4, h5, h6, p) {
+	color: inherit;
+}
+
+.form-module__preset {
+	width: 100%;
+	min-width: 0;
+}
+
+.form-module .form-preset {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+	column-gap: 0.9rem;
+	row-gap: 0.65rem;
+	align-items: end;
+	width: 100%;
+}
+
+.form-module .form-preset__field {
+	min-width: 0;
+}
+
+.form-module .form-preset__label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	color: color.scale($color-dark, $lightness: 45%);
+	@include type.text-style($font-family: $font-sans, $font-size: 1rem, $font-weight: 400);
+}
+
+.form-module .form-preset__input {
+	appearance: none;
+	inline-size: 100%;
+	border-radius: 999px;
+	border: 1px solid rgba($color-dark, 0.12);
+	background: $color-light;
+	color: $color-dark;
+	padding: 0.72rem 0.95rem;
+	@include type.text-style($font-family: $font-sans, $font-size: 1.1rem, $font-weight: 400);
+}
+
+.form-module .form-preset__input::placeholder {
+	color: color.scale($color-dark, $lightness: 60%);
+}
+
+.form-module .form-preset__actions {
+	display: flex;
+	align-items: end;
+	justify-content: flex-end;
+}
+
+@media (max-width: 68rem) {
+	.form-module .form-preset {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.form-module .form-preset__actions {
+		grid-column: 1 / -1;
+	}
+}
+
+@media (max-width: 44rem) {
+	.form-module {
+		border-radius: 1.4rem;
+	}
+
+	.form-module .form-preset {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.form-module .form-preset__actions {
+		justify-content: flex-start;
+	}
+}

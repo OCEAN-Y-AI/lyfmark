@@ -1,0 +1,40 @@
+---
+import Head from "~/components/Head.astro"
+import { siteConfig } from "~/config/site"
+
+interface Props {
+	title?: string
+	description?: string
+	lang?: string
+	frontmatter?: {
+		title?: string
+		description?: string
+		lang?: string
+	}
+}
+
+const { title: directTitle, description: directDescription, lang: directLang, frontmatter } = Astro.props as Props
+
+const title = typeof directTitle === "string" ? directTitle : frontmatter?.title
+const description = typeof directDescription === "string" ? directDescription : frontmatter?.description
+const lang = typeof directLang === "string" ? directLang : frontmatter?.lang
+---
+
+<!doctype html>
+<html lang={lang ?? siteConfig.defaultLocale}>
+	<Head title={title} description={description} />
+	<body>
+		<slot />
+	</body>
+</html>
+
+<style>
+	html,
+	body {
+		margin: 0;
+		width: 100%;
+		height: 100%;
+		background-color: hsl(0, 0%, 96%);
+		color: hsl(0, 0%, 9%);
+	}
+</style>

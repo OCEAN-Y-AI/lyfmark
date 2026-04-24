@@ -1,0 +1,37 @@
+---
+import { siteConfig } from "~/config/site";
+
+const baseUrl = import.meta.env.BASE_URL;
+
+interface Props {
+	title?: string;
+	description?: string;
+	stylesheetHrefs?: readonly string[];
+}
+
+const { title, description, stylesheetHrefs } = Astro.props as Props;
+const resolvedTitle = title?.trim().length ? title.trim() : siteConfig.defaultTitle;
+const resolvedDescription = description?.trim().length ? description.trim() : siteConfig.defaultDescription;
+const resolvedStylesheetHrefs = Array.from(
+	new Set(
+		(Array.isArray(stylesheetHrefs) ? stylesheetHrefs : [])
+			.filter((href): href is string => typeof href === "string")
+			.map((href) => href.trim())
+			.filter((href) => href.length > 0),
+	),
+);
+---
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width" />
+	<link rel="icon" type="image/svg+xml" href={baseUrl + "favicon.svg"} />
+	<meta name="generator" content={Astro.generator} />
+	<meta name="description" content={resolvedDescription} />
+	{
+		resolvedStylesheetHrefs.map((href) => (
+			<link rel="stylesheet" href={href} />
+		))
+	}
+	<title>{resolvedTitle}</title>
+</head>

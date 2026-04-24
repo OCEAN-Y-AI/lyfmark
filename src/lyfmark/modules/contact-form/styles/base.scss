@@ -1,0 +1,98 @@
+@use "sass:color";
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/typography.scss" as type;
+
+.contact-form-module {
+	margin: 3rem 0 1rem 0;
+	border-radius: 1.5rem;
+	color: $color-dark;
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+
+	h1 {
+		color: $color-light;
+	}
+	h2 {
+		color: $color-light;
+		margin-bottom: 1rem;
+	}
+
+	&__header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	&__subtitle {
+		margin: 0;
+		color: $color-light;
+	}
+
+	&__intro {
+		@include type.text;
+		color: $color-light;
+	}
+
+	&__form-wrapper {
+		border-radius: 1rem;
+		box-shadow: inset 0 0 0 1px rgba($color-dark, 0.05);
+	}
+
+	&__form {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem 1.5rem;
+	}
+
+	&__field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	&__field.full-row {
+		grid-column: 1 / -1;
+	}
+
+	&__label {
+		@include type.text-style($font-family: $font-sans-bold, $font-size: 0.95rem, $font-weight: 700);
+	}
+
+	&__input {
+		border-radius: 1rem;
+		border: none;
+		padding: 0.85rem;
+		@include type.text-style($font-family: $font-sans, $font-size: 1rem, $font-weight: 400);
+		background-color: $color-light;
+
+		&--textarea {
+			min-height: 8rem;
+			resize: vertical;
+		}
+	}
+
+	&__actions {
+		display: flex;
+		justify-content: flex-end;
+		grid-column: 1 / -1;
+		margin-top: 0.5rem;
+	}
+
+	&__submit {
+		color: $color-light;
+		background-color: $color-dark-accent;
+		@include type.text-style($font-family: $font-sans, $font-size: 1rem, $font-weight: 400);
+		padding: .6rem 3rem;
+		text-decoration: none;
+		border: none;
+		border-radius: 45px;
+		box-shadow: 2px 4px 4px 0 color.scale($color-dark, $lightness: 20%);
+
+		&:hover,
+		&:focus-visible {
+			font-weight: 800;
+		}
+	}
+}

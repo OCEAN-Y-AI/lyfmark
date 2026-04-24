@@ -1,0 +1,56 @@
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/colors.scss" as *;
+
+.background-color-module {
+	position: relative;
+	z-index: 0;
+	width: 100%;
+	margin: 0 auto;
+	padding: 0;
+	--background-color-text: #{$color-dark};
+	--content-tone-heading-color: var(--background-color-text);
+	--content-tone-body-color: var(--background-color-text);
+	&__inner {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		padding: 3rem 0;
+		color: var(--content-tone-body-color);
+	}
+
+	&::before {
+		content: "";
+		position: absolute;
+		z-index: -1;
+		top: 0;
+		bottom: 0;
+		left: 50%;
+		width: 100vw;
+		transform: translateX(-50%);
+	}
+}
+
+.background-color-module--tone-dark {
+	--background-color-text: #{$color-light};
+}
+
+.background-color-module__inner :where(h1, h2, h3, h4, h5, h6) {
+	color: var(--content-tone-heading-color);
+}
+
+.background-color-module__inner :where(p, li, blockquote) {
+	color: var(--content-tone-body-color);
+}
+
+.background-color-module--tone-light {
+	--background-color-text: #{$color-dark};
+}
+
+.background-color-module--solid::before {
+	background-color: var(--background-color-primary, $color-light);
+}
+
+.background-color-module--gradient::before {
+	background-image: linear-gradient(var(--background-color-direction, to right), var(--background-color-primary, $color-light), var(--background-color-secondary, var(--background-color-primary, $color-light)));
+}

@@ -1,0 +1,164 @@
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/colors.scss" as *;
+
+.background-wave-module {
+	margin: 0 auto;
+	position: relative;
+	overflow: hidden;
+	--background-wave-position: center center;
+	--background-wave-rotation: 0deg;
+	--background-wave-offset-x: 0;
+	--background-wave-offset-y: 0;
+	--background-wave-opacity: 1;
+	--background-wave-blend-mode: normal;
+	--background-wave-fit: none;
+	--background-wave-zoom: 1;
+	--background-wave-asset-zoom: var(--background-wave-zoom);
+	--background-wave-anchor-x: 50%;
+	--background-wave-anchor-y: 50%;
+	--background-wave-anchor-shift-x: -50%;
+	--background-wave-anchor-shift-y: -50%;
+	--background-wave-flip-x: 1;
+	--background-wave-flip-y: 1;
+	--background-wave-composition-scale: 1;
+
+	&__inner {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	&__media {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		pointer-events: none;
+	}
+
+	&__canvas,
+	&__asset {
+		position: absolute;
+		left: var(--background-wave-anchor-x);
+		top: var(--background-wave-anchor-y);
+		display: block;
+		max-width: none;
+		image-rendering: auto;
+		transform-origin: center;
+		backface-visibility: hidden;
+		opacity: var(--background-wave-opacity);
+		mix-blend-mode: var(--background-wave-blend-mode);
+	}
+
+	&__canvas {
+		object-fit: var(--background-wave-fit);
+		object-position: var(--background-wave-position);
+		transform: translate(var(--background-wave-anchor-shift-x), var(--background-wave-anchor-shift-y))
+			scale(var(--background-wave-composition-scale))
+			translate(var(--background-wave-offset-x), var(--background-wave-offset-y))
+			rotate(var(--background-wave-rotation))
+			scale(var(--background-wave-asset-zoom))
+			scale(var(--background-wave-flip-x), var(--background-wave-flip-y));
+		visibility: hidden;
+		will-change: transform;
+	}
+
+	&__asset {
+		object-fit: var(--background-wave-fit);
+		object-position: var(--background-wave-position);
+		transform: translate(var(--background-wave-anchor-shift-x), var(--background-wave-anchor-shift-y))
+			scale(var(--background-wave-composition-scale))
+			translate(var(--background-wave-offset-x), var(--background-wave-offset-y))
+			rotate(var(--background-wave-rotation))
+			scale(var(--background-wave-asset-zoom))
+			scale(var(--background-wave-flip-x), var(--background-wave-flip-y));
+		will-change: transform;
+	}
+
+	&--webgl {
+		.background-wave-module__canvas {
+			visibility: visible;
+		}
+
+		.background-wave-module__asset {
+			opacity: 0;
+		}
+	}
+}
+
+.background-wave-module--left {
+	--background-wave-position: left center;
+	--background-wave-anchor-x: 0%;
+	--background-wave-anchor-shift-x: 0%;
+}
+
+.background-wave-module--right {
+	--background-wave-position: right center;
+	--background-wave-anchor-x: 100%;
+	--background-wave-anchor-shift-x: -100%;
+}
+
+.background-wave-module--fill {
+	--background-wave-position: center;
+	--background-wave-anchor-x: 50%;
+	--background-wave-anchor-shift-x: -50%;
+	--background-wave-fit: cover;
+}
+
+.background-wave-module--contain {
+	--background-wave-position: center;
+	--background-wave-anchor-x: 50%;
+	--background-wave-anchor-shift-x: -50%;
+	--background-wave-fit: contain;
+}
+
+.background-wave-module--center {
+	--background-wave-position: center;
+	--background-wave-anchor-x: 50%;
+	--background-wave-anchor-shift-x: -50%;
+}
+
+.background-wave-module--relative-viewport {
+	overflow: visible;
+
+	.background-wave-module__media {
+		left: 50%;
+		top: 50%;
+		right: auto;
+		bottom: auto;
+		width: 100vw;
+		width: 100dvw;
+		height: 100vh;
+		height: 100dvh;
+		transform: translate(-50%, -50%);
+	}
+}
+
+.background-wave-module--relative-viewport-x {
+	overflow: visible;
+
+	.background-wave-module__media {
+		left: 50%;
+		right: auto;
+		width: 100vw;
+		width: 100dvw;
+		transform: translateX(-50%);
+		clip-path: inset(0 -50vw 0 -50vw);
+		clip-path: inset(0 -50dvw 0 -50dvw);
+	}
+}
+
+.background-wave-module--relative-viewport-y {
+	overflow: visible;
+
+	.background-wave-module__media {
+		top: 50%;
+		bottom: auto;
+		height: 100vh;
+		height: 100dvh;
+		transform: translateY(-50%);
+		clip-path: inset(-50vh 0 -50vh 0);
+		clip-path: inset(-50dvh 0 -50dvh 0);
+	}
+}

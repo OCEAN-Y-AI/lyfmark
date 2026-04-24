@@ -1,0 +1,69 @@
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+@use "./list/display-auto.scss";
+
+.list-module {
+	--list-module-item-gap: .5rem;
+	--list-module-surface: var(--list-module-tone-surface, var(--color-light, #{$color-light}));
+	--list-module-text: var(--list-module-tone-text, var(--color-dark, #{$color-dark}));
+	--list-module-border: var(--list-module-tone-border, var(--color-dark-accent, #{$color-dark-accent}));
+	--list-module-ordered-index-gradient: linear-gradient(
+		160deg,
+		var(--color-dark-accent, #{$color-dark-accent}) 0%,
+		var(--color-highlight, #{$color-highlight}) 100%
+	);
+	--list-module-ordered-index-text: #{$color-light};
+	--list-module-ordered-radius: 999px;
+	--list-module-ordered-index-width: clamp(4.4rem, 9vw, 7.5rem);
+
+	width: 100%;
+	min-width: 0;
+	margin: .5rem 0;
+}
+
+.list-module--tone-light {
+	--list-module-tone-surface: var(--color-light, #{$color-light});
+	--list-module-tone-text: var(--color-dark, #{$color-dark});
+	--list-module-tone-border: var(--color-dark-accent, #{$color-dark-accent});
+}
+
+.list-module--tone-dark {
+	--list-module-tone-surface: var(--color-dark-accent, #{$color-dark-accent});
+	--list-module-tone-text: var(--color-light, #{$color-light});
+	--list-module-tone-border: var(--color-light-accent, #{$color-light-accent});
+}
+
+:where(
+	.highlight-card--tone-light,
+	.background-color-module--tone-light,
+	.tabs-module--tone-light,
+	.tabs-module--tone-transparent-light,
+	.text-over-picture--tone-light,
+	.splash-screen--tone-light,
+	.page-teaser--tone-light,
+	.thumb-scroll--light,
+	.stacked-cards--tone-light,
+	.caroussel--tone-light
+) .list-module--tone-auto {
+	--list-module-tone-surface: var(--color-light, #{$color-light});
+	--list-module-tone-text: var(--color-dark, #{$color-dark});
+	--list-module-tone-border: var(--color-dark-accent, #{$color-dark-accent});
+}
+
+:where(
+	.highlight-card--tone-dark,
+	.background-color-module--tone-dark,
+	.tabs-module--tone-dark,
+	.tabs-module--tone-transparent-dark,
+	.text-over-picture--tone-dark,
+	.splash-screen--tone-dark,
+	.page-teaser--tone-dark,
+	.thumb-scroll--dark,
+	.stacked-cards--tone-dark,
+	.caroussel--tone-dark,
+	.manual-menu--panel-dark
+) .list-module--tone-auto {
+	--list-module-tone-surface: var(--color-dark-accent, #{$color-dark-accent});
+	--list-module-tone-text: var(--color-light, #{$color-light});
+	--list-module-tone-border: var(--color-light-accent, #{$color-light-accent});
+}

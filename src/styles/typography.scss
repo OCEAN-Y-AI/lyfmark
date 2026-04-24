@@ -1,0 +1,190 @@
+@use "global.scss" as *;
+@use "colors.scss" as *;
+
+$typography-line-height: 1.5 !default;
+$typography-weight-light: 300 !default;
+$typography-weight-regular: 400 !default;
+$typography-weight-heavy: 800 !default;
+$h2-font-size: 36px !default;
+$h2-line-height: 1.2 !default;
+
+@mixin text-style($font-family: $font-serif, $font-size: 16px, $font-weight: $typography-weight-regular, $font-style: normal, $line-height: $typography-line-height) {
+	font-family: $font-family;
+	font-size: $font-size;
+	font-weight: $font-weight;
+	font-style: $font-style;
+	line-height: $line-height;
+}
+
+@mixin h1 {
+	@include text-style($font-serif-bold-italic, 48px, $typography-weight-heavy, italic, 1.1);
+}
+
+@mixin h2 {
+	@include text-style($font-serif-italic, 36px, $typography-weight-regular, italic, 1.2);
+}
+
+@mixin h3 {
+	@include text-style($font-family: $font-serif, $font-size: 32px, $font-weight: $typography-weight-regular, $line-height: 1.2);
+}
+
+@mixin h4 {
+	@include text-style($font-family: $font-serif, $font-size: 24px, $font-weight: $typography-weight-regular, $line-height: 1.2);
+}
+
+@mixin h5 {
+	@include text-style($font-family: $font-serif, $font-size: 20px, $font-weight: $typography-weight-regular, $line-height: 1.3);
+}
+
+@mixin display-1 {
+	@include text-style($font-serif-bold, 96px, $typography-weight-heavy);
+}
+
+@mixin display-2 {
+	@include text-style($font-serif-bold, 64px, $typography-weight-heavy);
+}
+
+@mixin text-light {
+	@include text-style($font-serif, 16px, $typography-weight-light);
+}
+
+@mixin text {
+	@include text-style($font-serif, 16px);
+}
+
+@mixin fineprint {
+	@include text-style($font-serif, 14px);
+}
+
+@mixin text-inherit {
+	@include text-style($font-family: inherit, $font-size: inherit, $font-weight: inherit, $font-style: inherit, $line-height: inherit);
+}
+
+h1 {
+	@include h1;
+	color: $color-dark;
+	padding: 0;
+	margin: 0;
+}
+
+h2 {
+	@include h2;
+	margin: 0;
+	color: $color-dark;
+}
+
+h3 {
+	@include h3;
+	margin: 0;
+	color: $color-dark;
+}
+
+h4 {
+	@include h4;
+	margin: 0;
+	color: $color-dark;
+}
+
+h5 {
+	@include h5;
+	margin: 0;
+	color: $color-dark;
+	margin-bottom: 0.875rem;
+}
+
+:where(h1, h2) :where(strong, b) {
+	font-family: $font-serif-bold-italic;
+	font-weight: $typography-weight-heavy;
+	font-style: inherit;
+}
+
+:where(h3, h4, h5, h6) :where(strong, b) {
+	font-family: $font-serif-bold;
+	font-weight: $typography-weight-heavy;
+	font-style: inherit;
+}
+
+p {
+	@include text-inherit;
+	color: inherit;
+}
+
+div {
+	@include text-inherit;
+	color: inherit;
+}
+
+.h1 {
+	@include h1;
+}
+
+.h2 {
+	@include h2;
+}
+
+.h3 {
+	@include h3;
+}
+
+.h4 {
+	@include h4;
+}
+
+.h5 {
+	@include h5;
+}
+
+.display-1 {
+	@include display-1;
+}
+
+.display-2 {
+	@include display-2;
+}
+
+.text-light {
+	@include text-light;
+}
+
+.text {
+	@include text;
+}
+
+.fineprint {
+	@include fineprint;
+}
+
+
+.brand-emphasis {
+	font-family: $font-serif-bold;
+	font-weight: 800;
+	font-style: normal;
+}
+
+.brand-regular {
+	font-family: $font-serif;
+	font-weight: 300;
+	font-style: normal;
+}
+
+blockquote {
+	position: relative;
+	margin: 1rem 2rem;
+	padding-inline-start: 1rem;
+	border: 0;
+	font-style: italic !important;
+}
+
+blockquote :where(p, li) {
+	font-style: inherit !important;
+}
+
+blockquote::before {
+	content: "";
+	position: absolute;
+	inset-inline-start: 0;
+	inset-block: 0.1rem;
+	inline-size: 0.25rem;
+	border-radius: 999px;
+	background: var(--color-highlight);
+}

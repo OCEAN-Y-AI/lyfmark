@@ -1,0 +1,23 @@
+.caroussel--display-cut-elements {
+	overflow-x: hidden;
+	overflow-x: clip;
+}
+
+.caroussel--display-cut-elements .caroussel__viewport {
+	overflow-x: hidden;
+	overflow-x: clip;
+	overflow-y: hidden;
+	cursor: grab;
+}
+
+.caroussel--display-cut-elements .caroussel__track {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 1.25rem;
+	will-change: transform;
+	width: max-content;
+}
+
+.caroussel--display-cut-elements .caroussel__slide {
+	flex: 0 0 clamp(16rem, 33vw, 30rem);
+}

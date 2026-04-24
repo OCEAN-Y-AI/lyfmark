@@ -1,0 +1,14 @@
+.page-teaser__grid--template {
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+	grid-auto-flow: row;
+}
+
+.page-teaser__template {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	border: 1px solid var(--page-teaser-border);
+	border-radius: 1.25rem;
+	background: var(--page-teaser-surface);
+	overflow: hidden;
+}

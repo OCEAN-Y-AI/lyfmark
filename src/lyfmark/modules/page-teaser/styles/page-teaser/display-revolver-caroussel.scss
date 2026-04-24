@@ -1,0 +1,84 @@
+@use "../../../../../styles/colors.scss" as *;
+
+.page-teaser--display-revolver-caroussel {
+	--page-teaser-revolver-media-width: 24rem;
+	--page-teaser-revolver-media-ratio: 24 / 25;
+	--page-teaser-revolver-content-height: auto;
+}
+
+.page-teaser--display-revolver-caroussel .caroussel--display-revolver {
+	--caroussel-revolver-card-width: min(
+		calc(var(--page-teaser-revolver-media-width) + (var(--caroussel-card-border-width) * 2)),
+		100%
+	);
+	--caroussel-revolver-offset: clamp(3rem, 16vw, 16rem);
+}
+
+.page-teaser__revolver {
+	width: 100%;
+	min-width: 0;
+}
+
+.page-teaser--display-revolver-caroussel .caroussel {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.page-teaser__revolver-card {
+	padding: 0;
+}
+
+.page-teaser__revolver-media {
+	width: 100%;
+	height: auto;
+	aspect-ratio: var(--page-teaser-revolver-media-ratio);
+	flex: 0 0 auto;
+	margin: 0;
+	background: var(--page-teaser-surface-strong);
+}
+
+.page-teaser__revolver-card-content {
+	gap: 0;
+	padding: clamp(1rem, 2vw, 1.4rem);
+	min-height: 0;
+}
+
+.page-teaser__revolver-card-main {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	min-height: var(--page-teaser-revolver-content-height);
+}
+
+.page-teaser__revolver-card-footer {
+	margin-top: auto;
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.page-teaser--display-revolver-caroussel :is(.page-teaser__card-title, .page-teaser__card-summary, .page-teaser__card-date) {
+	color: inherit;
+}
+
+.page-teaser--display-revolver-caroussel .page-teaser__card-summary {
+	display: block;
+	-webkit-line-clamp: unset;
+	-webkit-box-orient: initial;
+	overflow: visible;
+}
+
+.page-teaser--display-revolver-caroussel .caroussel--tone-light .caroussel__slide--active .page-teaser__card-link {
+	background: var(--color-light, #{$color-light});
+	border-color: var(--color-light, #{$color-light});
+	color: var(--color-dark-accent, #{$color-dark-accent});
+}
+
+.page-teaser--display-revolver-caroussel .caroussel--tone-dark .caroussel__slide--active .page-teaser__card-link {
+	background: var(--color-dark-accent, #{$color-dark-accent});
+	border-color: var(--color-dark-accent, #{$color-dark-accent});
+	color: var(--color-light, #{$color-light});
+}

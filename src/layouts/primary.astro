@@ -1,0 +1,96 @@
+---
+import Head from "~/components/Head.astro"
+import ManualMenu from "~/components/ManualMenu.astro"
+import ModuleRuntimeScripts from "~/lyfmark/generated/module-runtime-scripts.astro"
+import { templateManifest } from "~/lyfmark/generated/template-manifest"
+import { templateStyleUrls } from "~/lyfmark/generated/template-style-urls"
+import { siteConfig } from "~/config/site"
+import { buildThemeOverrideStyleAttribute, resolveColorThemeOverrides } from "~/utils/theme-overrides"
+
+interface Props {
+	title?: string
+	description?: string
+	lang?: string
+	frontmatter?: {
+		title?: string
+		description?: string
+		lang?: string
+		[key: string]: unknown
+	}
+}
+
+const { title: directTitle, description: directDescription, lang: directLang, frontmatter } = Astro.props as Props
+
+const title = typeof directTitle === "string" ? directTitle : typeof frontmatter?.title === "string" ? frontmatter.title : undefined
+const description =
+	typeof directDescription === "string"
+		? directDescription
+		: typeof frontmatter?.description === "string"
+			? frontmatter.description
+			: undefined
+const lang = typeof directLang === "string" ? directLang : typeof frontmatter?.lang === "string" ? frontmatter.lang : undefined
+const pageThemeOverrides = resolveColorThemeOverrides(frontmatter)
+const pageThemeStyleAttribute = buildThemeOverrideStyleAttribute(pageThemeOverrides)
+const availableTemplates = [...templateManifest.templates] as readonly string[]
+const availableTemplateSet = new Set<string>(availableTemplates)
+const validTemplateChoices = availableTemplates.join(", ")
+const pagePath = Astro.url.pathname
+
+const resolveOptionalTemplateOverride = (value: unknown): string | undefined => {
+	if (value === undefined || value === null) {
+		return undefined
+	}
+	if (typeof value !== "string") {
+		throw new Error(
+			`[LyfMark] Invalid frontmatter.template on "${pagePath}". Expected string, got ${typeof value}. Valid templates: ${validTemplateChoices}.`,
+		)
+	}
+	const normalized = value.trim()
+	if (normalized.length === 0) {
+		throw new Error(
+			`[LyfMark] Invalid frontmatter.template on "${pagePath}". Empty values are not allowed. Valid templates: ${validTemplateChoices}.`,
+		)
+	}
+	return normalized
+}
+
+const assertTemplateIsKnown = (templateId: string, source: string): void => {
+	if (!availableTemplateSet.has(templateId)) {
+		throw new Error(
+			`[LyfMark] Unknown ${source} "${templateId}" on "${pagePath}". Valid templates: ${validTemplateChoices}.`,
+		)
+	}
+}
+
+const pageTemplateOverride = resolveOptionalTemplateOverride(frontmatter?.template)
+const effectiveTemplate = pageTemplateOverride ?? siteConfig.defaultTemplate
+assertTemplateIsKnown(siteConfig.defaultTemplate, "site.config.yml defaultTemplate")
+if (pageTemplateOverride) {
+	assertTemplateIsKnown(pageTemplateOverride, "frontmatter.template")
+}
+assertTemplateIsKnown(effectiveTemplate, "effective template")
+const templateStylesheetById = templateStyleUrls as Record<string, string>
+const templateStylesheetHref = templateStylesheetById[effectiveTemplate]
+if (typeof templateStylesheetHref !== "string" || templateStylesheetHref.trim().length === 0) {
+	throw new Error(
+		`[LyfMark] Missing stylesheet mapping for effective template "${effectiveTemplate}" on "${pagePath}". Valid templates: ${validTemplateChoices}.`,
+	)
+}
+---
+
+<!doctype html>
+<html lang={lang ?? siteConfig.defaultLocale}>
+	<Head title={title} description={description} stylesheetHrefs={[templateStylesheetHref]} />
+	<body style={pageThemeStyleAttribute} data-lyfmark-template={effectiveTemplate}>
+		<div class="page-top-chrome">
+			<ManualMenu />
+		</div>
+		<div id="page">
+			<div id="content">
+				<slot />
+			</div>
+		</div>
+		<script src="../scripts/manual-menu.js"></script>
+		<ModuleRuntimeScripts />
+	</body>
+</html>

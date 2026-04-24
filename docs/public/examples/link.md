@@ -1,0 +1,8 @@
+:::link to="/kontakt" text="Direkt beraten lassen" style="default"
+:::link to="/kontakt" text="Direkt beraten lassen (CTA)" style="cta"
+:::link to="/team" text="Unser Team" style="outline" align="center"
+:::link to="/angebote" text="Individuelles Angebot" style="outline" color="dark" align="right"
+:::link to="/risiken" text="Risiko melden" style="destructive" target="new"
+:::link to="/kontakt" text="Erstgespraech" style="cta" color="dark"
+:::link to="/kontakt" text="Mehr Informationen" style="outline" color="dark" align="right"
+:::link to="/kontakt" text="Einzelner Link in neuer Zeile" style="outline"

@@ -1,0 +1,112 @@
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/colors.scss" as *;
+
+.background-image-module {
+	margin: 0 auto;
+	width: 100%;
+}
+
+.background-image-module__inner {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+[data-bg-image-layer] {
+	position: relative;
+	isolation: isolate;
+}
+
+[data-bg-image-layer] > .background-image-layer {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+}
+
+[data-bg-image-layer] > :not(.background-image-layer) {
+	position: relative;
+	z-index: 1;
+}
+
+.background-image-layer {
+	--background-image-position: center center;
+	--background-image-rotation: 0deg;
+	--background-image-offset-x: 0;
+	--background-image-offset-y: 0;
+	--background-image-opacity: 1;
+	--background-image-blend-mode: normal;
+	--background-image-fit: none;
+	--background-image-flip-x: 1;
+	--background-image-flip-y: 1;
+}
+
+.background-image-layer__frame {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+}
+
+.background-image-layer__asset {
+	display: block;
+	max-width: none;
+	object-fit: var(--background-image-fit);
+	object-position: var(--background-image-position);
+	transform: translate(var(--background-image-offset-x), var(--background-image-offset-y)) rotate(var(--background-image-rotation))
+		scale(var(--background-image-flip-x), var(--background-image-flip-y));
+	transform-origin: center;
+	opacity: var(--background-image-opacity);
+	mix-blend-mode: var(--background-image-blend-mode);
+}
+
+.background-image-layer--position-left {
+	--background-image-position: left center;
+}
+
+.background-image-layer--position-right {
+	--background-image-position: right center;
+}
+
+.background-image-layer--position-fill {
+	--background-image-position: center;
+	--background-image-fit: cover;
+}
+
+.background-image-layer--position-contain {
+	--background-image-position: center;
+	--background-image-fit: contain;
+}
+
+.background-image-layer--position-center {
+	--background-image-position: center;
+}
+
+.background-image-layer--constraint-viewport,
+.background-image-layer--constraint-viewport-x {
+	overflow: visible;
+}
+
+.background-image-layer--constraint-viewport > .background-image-layer__frame {
+	left: 50%;
+	top: 50%;
+	right: auto;
+	bottom: auto;
+	width: 100vw;
+	width: 100dvw;
+	height: 100vh;
+	height: 100dvh;
+	transform: translate(-50%, -50%);
+}
+
+.background-image-layer--constraint-viewport-x > .background-image-layer__frame {
+	left: 50%;
+	right: auto;
+	width: 100vw;
+	width: 100dvw;
+	transform: translateX(-50%);
+	clip-path: inset(0 -50vw 0 -50vw);
+	clip-path: inset(0 -50dvw 0 -50dvw);
+}

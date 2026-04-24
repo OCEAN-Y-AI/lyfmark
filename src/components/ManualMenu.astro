@@ -1,0 +1,197 @@
+---
+import ManualMenuSection from "~/components/manual-menu/ManualMenuSection.astro"
+import { siteConfig } from "~/config/site"
+import { loadManualMenuTemplateForPath } from "~/components/manual-menu/manual-menu"
+import { toMenuToneClass } from "~/components/manual-menu/manual-menu.presentation"
+import { stripBasePath, withBasePath } from "~/utils/path-utils"
+
+const baseUrl = import.meta.env.BASE_URL
+const basePath = baseUrl === "/" ? "" : baseUrl.replace(/\/+$/, "")
+const pathnameWithoutBase = stripBasePath(Astro.url.pathname, basePath)
+
+const menuTemplate = await loadManualMenuTemplateForPath(pathnameWithoutBase, basePath)
+const menuPanelId = "manual-menu-panel"
+const menuPanelTone = siteConfig.menu.panelTone
+const menuPanelClass = menuPanelTone === "dark" ? "manual-menu--panel-dark" : "manual-menu--panel-light"
+const menuButtonToneClass = menuPanelTone === "dark" ? "ui-button--dark" : "ui-button--light"
+const menuButtonClasses = ["manual-menu__button", "ui-button", "ui-button--pill", menuButtonToneClass, "ui-button--outline"]
+
+const withBase = (pathname: string): string => withBasePath(pathname, basePath, baseUrl)
+---
+
+<nav class:list={{ "manual-menu": true, [menuPanelClass]: true }} data-manual-menu data-open="false" aria-label="Hauptnavigation">
+	<div class="manual-menu__bar">
+		<div class="manual-menu__brand">
+			{
+				siteConfig.menu.brand.type === "image" ? (
+					<a class="manual-menu__brand-link" href={withBase(siteConfig.menu.brand.href)}>
+						<img class="manual-menu__brand-image" src={withBase(siteConfig.menu.brand.src)} alt={siteConfig.menu.brand.alt} decoding="async" />
+					</a>
+				) : (
+					<a class="manual-menu__brand-link" href={withBase(siteConfig.menu.brand.href)}>
+						{
+							siteConfig.menu.brand.html && siteConfig.menu.brand.html.trim().length > 0 ? (
+								<span class="manual-menu__brand-text" set:html={siteConfig.menu.brand.html}></span>
+							) : (
+								<span class="manual-menu__brand-text">{siteConfig.menu.brand.text}</span>
+							)
+						}
+					</a>
+				)
+			}
+		</div>
+
+		<button
+			type="button"
+			class="manual-menu__toggle"
+			data-manual-menu-toggle
+			aria-controls={menuPanelId}
+			aria-expanded="false"
+			aria-label="Menü öffnen oder schließen"
+		>
+			<span class="manual-menu__toggle-icon" aria-hidden="true"></span>
+		</button>
+
+		<ul class="manual-menu__top-list" id={menuPanelId} data-manual-menu-panel role="list">
+			{
+				menuTemplate.items.map((item, itemIndex) => {
+					if (item.type === "separator") {
+						return (
+							<li class="manual-menu__top-item manual-menu__top-item--separator" role="presentation" aria-hidden="true">
+								<span class="manual-menu__top-separator"></span>
+							</li>
+						)
+					}
+
+					const hasChildren = item.sections.length > 0 || item.links.length > 0 || Boolean(item.content) || Boolean(item.advertise)
+					const topToneClass = toMenuToneClass(item.tone)
+					const topItemId = `manual-menu-item-${itemIndex}`
+
+					return (
+						<li
+							class:list={{ "manual-menu__top-item": true, "manual-menu__top-item--has-children": hasChildren }}
+							data-manual-menu-item-id={topItemId}
+						>
+							{
+								hasChildren ? (
+									<details class="manual-menu__details" data-manual-menu-details data-manual-menu-item-id={topItemId}>
+										<summary class:list={{ "manual-menu__summary": true, [topToneClass]: topToneClass.length > 0 }} data-manual-menu-summary>
+											{item.label}
+										</summary>
+										<div class="manual-menu__panel" id={`${topItemId}-panel`}>
+											<div class="manual-menu__mobile-nav">
+												<button
+													type="button"
+													class="manual-menu__back ui-arrow-button ui-arrow-button--outline"
+													data-manual-menu-back
+													aria-controls={menuPanelId}
+													aria-label={`Zurück zum Hauptmenü von ${item.label}`}
+												>
+													<span aria-hidden="true">←</span>
+												</button>
+												<div class="manual-menu__mobile-nav-heading">
+													<button
+														type="button"
+														class="manual-menu__mobile-title-action"
+														data-manual-menu-back
+														aria-controls={menuPanelId}
+														aria-label={`Zurück zum Hauptmenü von ${item.label}`}
+													>
+														{item.label}
+													</button>
+													<span class="ui-highlight-rule" aria-hidden="true"></span>
+												</div>
+											</div>
+											<div class="manual-menu__panel-inner">
+												<ul class="manual-menu__panel-content manual-menu__panel-list" role="list">
+													{
+														item.sections.map((section, sectionIndex) => (
+															<ManualMenuSection
+																section={section}
+																basePath={basePath}
+																baseUrl={baseUrl}
+																menuButtonClasses={menuButtonClasses}
+																isTopLevelSection={true}
+																sectionPath={`${topItemId}-${sectionIndex}`}
+															/>
+														))
+													}
+													{
+														item.links.length > 0 && (
+															<li class="manual-menu__section manual-menu__section--links-only">
+																<ul class="manual-menu__section-content-list" role="list">
+																	<li class="manual-menu__section-content-item">
+																		<ul class="manual-menu__links" role="list">
+																			{
+																				item.links.map((link) => {
+																					const linkToneClass = toMenuToneClass(link.tone)
+																					return (
+																						<li class="manual-menu__link-item">
+																							<a
+																								class:list={{
+																									"manual-menu__inline-link": true,
+																									[linkToneClass]: linkToneClass.length > 0,
+																								}}
+																								href={withBase(link.href)}
+																							>
+																								{link.label}
+																							</a>
+																						</li>
+																					)
+																				})
+																			}
+																		</ul>
+																	</li>
+																	{
+																		item.button && (
+																			<li class="manual-menu__section-content-item manual-menu__section-content-item--button">
+																				<p class="manual-menu__button-wrap">
+																					<a class:list={menuButtonClasses} href={withBase(item.button.href)}>
+																						{item.button.label}
+																					</a>
+																				</p>
+																			</li>
+																		)
+																	}
+																</ul>
+															</li>
+														)
+													}
+													{
+														item.content && (
+															<li class="manual-menu__section manual-menu__section--content-only">
+																<ul class="manual-menu__section-content-list" role="list">
+																	<li class="manual-menu__section-content-item manual-menu__section-content-item--content">
+																		<div class="manual-menu__content" set:html={item.content.html}></div>
+																	</li>
+																</ul>
+															</li>
+														)
+													}
+													{
+														item.advertise && (
+															<li class="manual-menu__advertise" aria-label="Hinweisbereich">
+																<div class="manual-menu__advertise-inner" set:html={item.advertise.html}></div>
+															</li>
+														)
+													}
+												</ul>
+											</div>
+										</div>
+									</details>
+								) : (
+									<a
+										class:list={{ "manual-menu__top-link": true, [topToneClass]: topToneClass.length > 0 }}
+										href={withBase(item.href ?? "/")}
+									>
+										{item.label}
+									</a>
+								)
+							}
+						</li>
+					)
+				})
+			}
+		</ul>
+	</div>
+</nav>

@@ -1,0 +1,11 @@
+{
+  "name": "background-wave",
+  "version": "1.0.0",
+  "entry": "module.ts",
+  "styles": {
+    "base": "styles/base.scss",
+    "templates": []
+  },
+  "internalDocs": "internal.md",
+  "testcases": "testcases.md"
+}

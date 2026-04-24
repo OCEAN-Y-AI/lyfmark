@@ -1,0 +1,44 @@
+@use "../../../../styles/global.scss" as *;
+
+.split {
+	margin: 0;
+	display: grid;
+	gap: 2rem;
+	--split-columns: 2;
+	grid-template-columns: var(--split-columns-template, repeat(var(--split-columns), minmax(0, 1fr)));
+
+	&--cols-2 {
+		--split-columns: 2;
+	}
+
+	&--cols-3 {
+		--split-columns: 3;
+	}
+
+	&--cols-4 {
+		--split-columns: 4;
+	}
+
+	&__column {
+		display: flex;
+		flex-direction: column;
+
+		> :first-child {
+			margin-top: 0;
+		}
+
+		> :where(*):not(:has(~ *)) {
+			margin-bottom: 0;
+		}
+	}
+
+	&__column--empty {
+		min-height: 1px;
+	}
+}
+
+@media (max-width: 56rem) {
+	.split {
+		grid-template-columns: 1fr;
+	}
+}

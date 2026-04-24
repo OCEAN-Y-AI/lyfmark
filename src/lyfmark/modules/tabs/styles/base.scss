@@ -1,0 +1,97 @@
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/typography.scss" as type;
+
+.tabs-module {
+	--tabs-module-background: #{$color-light};
+	--tabs-module-border: #{rgba($color-dark, 0.08)};
+	--tabs-module-surface: #{$color-light};
+	--tabs-module-text: #{$color-dark};
+	--tabs-module-body: #{$color-light};
+
+	color: var(--tabs-module-text);
+	background: var(--tabs-module-background);
+	margin: 2rem 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	border-radius: 1rem;
+	flex: 0 1 100%;
+}
+
+.tabs-module--tone-dark {
+	--tabs-module-background: var(--color-dark-accent, #{$color-dark-accent});
+	--tabs-module-surface: var(--color-dark-accent, #{$color-dark-accent});
+	--tabs-module-border: #{rgba($color-light, 0.22)};
+	--tabs-module-text: #{$color-light};
+	--tabs-module-body: #{$color-light};
+
+	h1,h2,h3,h4,h5,h6 {
+		color: var(--content-tone-heading-color, var(--tabs-module-text));
+	}
+}
+
+.tabs-module--tone-transparent-light {
+	--tabs-module-background: transparent;
+	--tabs-module-surface: transparent;
+}
+
+.tabs-module--tone-transparent-dark {
+	--tabs-module-background: transparent;
+	--tabs-module-surface: transparent;
+	--tabs-module-border: #{rgba($color-light, 0.22)};
+	--tabs-module-text: #{$color-light};
+	--tabs-module-body: #{$color-light};
+
+	h1,h2,h3,h4,h5,h6 {
+		color: var(--content-tone-heading-color, var(--tabs-module-text));
+	}
+}
+
+.tabs-module__controls {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 1rem;
+	row-gap: 0.35rem;
+	padding-bottom: 0.75rem;
+}
+
+.tabs-module__tab {
+	cursor: pointer;
+}
+
+.tabs-module__tab span {
+	pointer-events: none;
+}
+
+.tabs-module__panels {
+	background: var(--tabs-module-surface);
+	border-radius: 1rem;
+	padding: 1rem;
+}
+
+.tabs-module__panel {
+	padding: 0;
+	color: inherit;
+}
+
+.tabs-module__panel + .tabs-module__panel {
+	margin-top: 1.5rem;
+	border-top: 1px solid var(--tabs-module-border);
+	padding-top: 1.5rem;
+}
+
+.tabs-module--interactive .tabs-module__panel {
+	display: none;
+	margin-top: 0;
+	border-top: 0;
+	padding-top: 0;
+}
+
+.tabs-module--interactive .tabs-module__panel--active {
+	display: block;
+}
+
+.tabs-module :where(p, li) {
+	line-height: type.$typography-line-height;
+}

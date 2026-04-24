@@ -1,0 +1,23 @@
+<form class="form-preset form-preset--basic-contact" method="post" action="$target-url">
+	<div class="form-preset__field">
+		<label class="form-preset__label">
+			Name *
+			<input class="form-preset__input" type="text" name="name" autocomplete="name" required />
+		</label>
+	</div>
+	<div class="form-preset__field">
+		<label class="form-preset__label">
+			E-mail *
+			<input class="form-preset__input" type="email" name="email" autocomplete="email" required />
+		</label>
+	</div>
+	<div class="form-preset__field">
+		<label class="form-preset__label">
+			Nachricht *
+			<textarea class="form-preset__textarea" name="message" rows="6" required></textarea>
+		</label>
+	</div>
+	<div class="form-preset__actions">
+		<button type="submit" class="form-preset__submit ui-button ui-button--light ui-button--cta ui-button--pill">$submit-label</button>
+	</div>
+</form>

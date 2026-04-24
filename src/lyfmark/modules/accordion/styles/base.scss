@@ -1,0 +1,96 @@
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/global.scss" as *;
+@use "../../../../styles/typography.scss" as type;
+
+.accordion-module {
+	--accordion-border: #{$color-highlight};
+	--accordion-surface: #{rgba(0, 0, 0, 0)};
+	--accordion-focus: #{$color-dark-accent};
+
+	margin: 2rem 0;
+	border-radius: 0;
+	border-top: 1px solid var(--accordion-border);
+	border-bottom: 1px solid var(--accordion-border);
+	background: var(--accordion-surface);
+	overflow: hidden;
+
+	&__item + &__item {
+		border-top: 1px solid var(--accordion-border);
+	}
+
+	&__heading {
+		margin: 0;
+		color: inherit;
+	}
+
+	&__title {
+		font-weight: bold;
+	}
+
+	&__trigger {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1.2rem 0;
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		text-align: left;
+		color: inherit;
+		@include type.text-style($font-family: $font-serif-bold, $font-size: 1.05rem, $font-weight: 700, $line-height: 1.3);
+	}
+
+	&__trigger:hover {
+		background: rgba($color-dark, 0.03);
+	}
+
+	@supports (background-color: color-mix(in srgb, #000 10%, transparent)) {
+		&__trigger:hover {
+			background: color-mix(in srgb, currentColor 12%, transparent);
+		}
+	}
+
+	&__trigger:focus-visible {
+		outline: 2px solid var(--accordion-focus);
+		outline-offset: 2px;
+	}
+
+	&__icon {
+		width: 1rem;
+		height: 1rem;
+		position: relative;
+		flex: 0 0 auto;
+	}
+
+	&__icon::before {
+		content: "";
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 0.85rem;
+		height: 0.85rem;
+		border-right: 2px solid currentColor;
+		border-bottom: 2px solid currentColor;
+		transform: translate(-50%, -50%) rotate(225deg);
+		transition: transform 0.15s ease;
+	}
+
+	&__trigger[aria-expanded="true"] &__icon::before {
+		transform: translate(-50%, -50%) rotate(45deg);
+	}
+
+	&__panel {
+		padding: 0 1.5rem 1.5rem 1.5rem;
+		color: inherit;
+	}
+
+	&__panel :where(p, li) {
+		line-height: type.$typography-line-height;
+	}
+}
+
+.accordion-module--interactive .accordion-module__panel[hidden] {
+	display: none;
+}

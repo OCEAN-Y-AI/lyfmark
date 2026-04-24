@@ -1,0 +1,120 @@
+@use "sass:color";
+@use "../../../../styles/colors.scss" as *;
+@use "../../../../styles/typography.scss" as type;
+
+.highlight-card {
+	position: relative;
+	border-radius: 40px;
+	--highlight-card-padding: clamp(1rem, 3vw, .5rem);
+	--highlight-card-background: var(--color-dark-accent, #{$color-dark-accent});
+	--highlight-card-border: transparent;
+	--highlight-card-border-width: 0;
+	--highlight-card-text: #{$color-light};
+	--highlight-card-body: #{rgba($color-light, 0.9)};
+	--content-tone-heading-color: var(--highlight-card-text);
+	--content-tone-body-color: var(--highlight-card-body);
+	background: var(--highlight-card-background);
+	border: var(--highlight-card-border-width) solid var(--highlight-card-border);
+	box-shadow: none;
+	color: var(--highlight-card-text);
+	width: 100%;
+	min-width: 0;
+	padding: var(--highlight-card-padding);
+	overflow: hidden;
+	margin: 1rem auto;
+
+	&__inner {
+		--picture-parent-bleed-inline: var(--highlight-card-padding);
+		--picture-parent-bleed-block: var(--highlight-card-padding);
+		width: 100%;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	&__inner > :first-child {
+		margin-top: 0;
+	}
+
+	&__inner > :last-child {
+		margin-bottom: 0;
+	}
+
+	&__inner > :is(.link-module, .link-module-row):last-child,
+	&__inner > p:last-child:has(> a:only-child) {
+		margin-top: auto;
+		margin-bottom: 0;
+	}
+
+	:where(h1, h2, h3, h4, h5, h6) {
+		color: inherit;
+		margin: 0;
+	}
+
+	:where(p, li) {
+		@include type.text;
+		color: var(--highlight-card-body);
+	}
+
+}
+
+.highlight-card--tone-light {
+	--highlight-card-background: #{$color-light};
+	--highlight-card-border: #{$color-dark-accent};
+	--highlight-card-border-width: 3px;
+	--highlight-card-text: #{$color-dark};
+	--highlight-card-body: #{$color-dark};
+}
+
+.highlight-card--tone-auto {
+	/* Fallback without explicit surrounding tone context. */
+	--highlight-card-background: var(--color-dark-accent, #{$color-dark-accent});
+	--highlight-card-border: transparent;
+	--highlight-card-border-width: 0;
+	--highlight-card-text: #{$color-light};
+	--highlight-card-body: #{rgba($color-light, 0.9)};
+}
+
+:where(
+	.background-color-module--tone-light,
+	.tabs-module--tone-light,
+	.tabs-module--tone-transparent-light,
+	.text-over-picture--tone-light,
+	.splash-screen--tone-light,
+	.page-teaser--tone-light,
+	.thumb-scroll--light,
+	.stacked-cards--tone-light,
+	.caroussel--tone-light,
+	.manual-menu--panel-light
+) .highlight-card--tone-auto {
+	--highlight-card-background: var(--color-dark-accent, #{$color-dark-accent});
+	--highlight-card-border: transparent;
+	--highlight-card-border-width: 0;
+	--highlight-card-text: #{$color-light};
+	--highlight-card-body: #{rgba($color-light, 0.9)};
+}
+
+:where(
+	.background-color-module--tone-dark,
+	.tabs-module--tone-dark,
+	.tabs-module--tone-transparent-dark,
+	.text-over-picture--tone-dark,
+	.splash-screen--tone-dark,
+	.page-teaser--tone-dark,
+	.thumb-scroll--dark,
+	.stacked-cards--tone-dark,
+	.caroussel--tone-dark,
+	.manual-menu--panel-dark
+) .highlight-card--tone-auto {
+	--highlight-card-background: #{$color-light};
+	--highlight-card-border: #{$color-dark-accent};
+	--highlight-card-border-width: 3px;
+	--highlight-card-text: #{$color-dark};
+	--highlight-card-body: #{$color-dark};
+}
+
+@media (min-width: 72rem) {
+	.highlight-card {
+		--highlight-card-padding: 2.5rem;
+	}
+}

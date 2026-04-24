@@ -1,0 +1,60 @@
+---
+export interface Props {
+	rootLabel?: string // z.B. "Startseite"
+	ariaLabel?: string // z.B. "Brotkrumen"
+	separator?: string // z.B. "›"
+}
+const { rootLabel = "Start", ariaLabel = "Breadcrumb", separator = "›" } = Astro.props
+
+const baseUrl = import.meta.env.BASE_URL
+const basePath = baseUrl === "/" ? "" : baseUrl.replace(/\/+$/, "")
+const stripBase = (pathname: string): string => {
+	if (basePath.length === 0) {
+		return pathname
+	}
+	if (pathname == basePath) {
+		return "/"
+	}
+	return pathname.startsWith(basePath + "/") ? pathname.slice(basePath.length) : pathname
+}
+const withBase = (pathname: string): string => {
+	if (basePath.length === 0) {
+		return pathname
+	}
+	return pathname === "/" ? baseUrl : `${basePath}${pathname}`
+}
+
+const path = stripBase(Astro.url.pathname).replace(/\/+$/, "/") // normalize trailing slash
+const segments = path.split("/").filter(Boolean)
+
+const labelize = (slug: string): string => slug.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase())
+
+let acc = "/"
+const items = [
+	{ href: withBase("/"), label: rootLabel },
+	...segments.map((s, i) => {
+		acc += (i === 0 ? "" : "") + s + "/"
+		return { href: withBase(acc), label: labelize(s) }
+	}),
+]
+
+// last item is current page
+const lastIndex = items.length - 1
+---
+
+<div class="breadcrumbs-component">
+	<nav class="breadcrumbs" aria-label={ariaLabel}>
+		{
+			items.map((it, i) => (
+				<>
+					{i > 0 && (
+						<span class="sep" aria-hidden="true">
+							{separator}
+						</span>
+					)}
+					<span class:list={{ bcEntry: true, current: i === lastIndex }}>{i === lastIndex ? <span aria-current="page">{it.label}</span> : <a href={it.href}>{it.label}</a>}</span>
+				</>
+			))
+		}
+	</nav>
+</div>
