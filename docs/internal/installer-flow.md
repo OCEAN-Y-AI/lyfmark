@@ -1,4 +1,4 @@
-# Installer-Flow (Double-Click, nicht-technisch)
+# Installer-Flow (Doppelklick, nicht-technisch)
 
 Stand: 22.04.2026
 
@@ -8,39 +8,61 @@ Der Erststart muss ohne manuelle Terminal-Bedienung möglich sein: Doppelklick a
 
 ## Artefakte
 
-- Kernlogik: `tools/installer/wizard.mjs`
-- Wrapper:
+- Kundenartefakt Zielbild: `LyfMark-Setup.exe`.
+- Windows-Installationsskript als aktuelle Bootstrap-Quelle: `installer/windows/install.ps1`.
+- Projektinterner Wizard nach erfolgreichem Bootstrap: `tools/installer/wizard.mjs`.
+- Projektinterne Wrapper für bereits vorhandene Projektordner:
 	- Windows: `installer/windows/install.cmd`
 	- macOS: `installer/macos/install.command`
 	- Linux: `installer/linux/install.sh`
 
 ## Ablauf (verbindlich)
 
-1. Projekt-Root validieren (`package.json` vorhanden).
-2. Pflicht-Tools prüfen:
+1. Das Kundenartefakt lädt die aktuelle Version von `installer/windows/install.ps1` aus GitHub/Server und führt sie aus.
+2. Das Bootstrap-Skript prüft/installiert Systemprogramme:
 	- `node`
 	- `npm`
 	- `git`
 	- `ssh-keygen`
-3. Git-Identität prüfen/setzen (`git config --global user.name/user.email`).
-4. SSH-Key prüfen/erzeugen (`~/.ssh/id_ed25519`) und GitHub-Key-Seite öffnen.
-5. Projektabhängigkeiten installieren (`npm install`).
-6. Struktur/Fallbacks finalisieren (`npm run repair`).
-7. Abschluss mit klaren nächsten Schritten.
+	- Visual Studio Code
+3. Das Bootstrap-Skript lädt das LyfMark-Projekt in den lokalen Zielordner.
+4. Der projektinterne Wizard prüft/setzt Git-Identität (`git config --global user.name/user.email`).
+5. Der Wizard prüft/erzeugt den SSH-Key (`~/.ssh/id_ed25519`) und öffnet die GitHub-Key-Seite.
+6. Der Wizard installiert Projektabhängigkeiten (`npm install`).
+7. Der Wizard finalisiert die Struktur (`npm run repair`).
+8. Das Bootstrap-Skript öffnet die Customer-Workspace in Visual Studio Code.
+9. Abschluss mit klaren nächsten Schritten.
 
 ## Fehlerverhalten (DbC)
 
-- Fehlende Pflicht-Tools führen zu klarer Meldung + Download-Link.
+- Fehlende Pflicht-Tools werden im Windows-Bootstrap über `winget` installiert, falls nicht explizit deaktiviert.
+- Wenn `winget` oder eine Systeminstallation blockiert ist, bricht der Installer mit klarer Handlungsanweisung ab.
 - Harte Konflikte (z. B. kein Projekt-Root, fehlgeschlagene Setup-Schritte) brechen mit eindeutiger Handlungsanweisung ab.
 - Keine stillen Fallbacks bei Setup-Fehlern.
 
 ## Wrapper-Vertrag
 
-- Wrapper müssen per Doppelklick ausführbar sein.
-- Wrapper prüfen mindestens auf vorhandenes `node` und delegieren dann an `wizard.mjs`.
-- Wrapper beenden mit Exit-Code der Wizard-Ausführung.
+- Das spätere `LyfMark-Setup.exe` ist das einzige Kundenartefakt.
+- Das `.exe` enthält keine dauerhaft eingebettete Installationslogik, sondern lädt das aktuelle Installationsskript und führt es aus.
+- Der `.exe`-Wrapper muss den Exit-Code des Skripts übernehmen und dessen Fehlerausgabe für Supportfälle sichtbar/logbar machen.
+- Projektinterne Wrapper bleiben nur Entwickler-/Support-Einstieg für bereits geladene Projektordner.
 
 ## Automatisierung/Support
+
+Windows-Bootstrap (`installer/windows/install.ps1`):
+
+- `-RepositoryUrl <url>`
+- `-InstallDirectory <pfad>`
+- `-Yes`
+- `-GitName <name>`
+- `-GitEmail <email>`
+- `-SshComment <email/oder kommentar>`
+- `-SkipToolInstall`
+- `-SkipVSCode`
+- `-SkipOpenWorkspace`
+- `-NoPause`
+
+Projekt-Wizard (`tools/installer/wizard.mjs`):
 
 - Für Skriptläufe und Support sind folgende Optionen verfügbar:
 	- `--yes`
@@ -81,6 +103,7 @@ CI-Contract:
 	- nicht-interaktiver Wizard-Lauf inkl. `npm run repair`
 	- Wrapper-Smoke-Test je Plattform mit Argument-Weitergabe
 	- vollständiger E2E-Installlauf je Plattform (`ubuntu-latest`, `macos-latest`, `windows-latest`) mit Wizard + Wrapper + `npm install` + `npm run repair`
+	- Windows-Bootstrap-Skript als echten Einstiegspunkt (`installer/windows/install.ps1`) gegen ein frisches Zielverzeichnis
 
 ## E2E-Modi (Manual + Auto)
 
@@ -101,4 +124,4 @@ Mocking-Hinweis:
 
 ## Offene Produktgrenze
 
-Der Wizard führt derzeit keine automatisierte Systeminstallation von Node/Git durch (Admin-/Policy-abhängig). Stattdessen: geführte Prüfung + Link-gestützter Installweg. Die echte One-Click-Systeminstallation erfolgt im externen Installer-Wrapper (separates Auslieferungsprojekt).
+Der aktuelle Windows-Bootstrap installiert Systemprogramme über `winget`. Das spätere `.exe` ist zunächst nur ein komfortabler Doppelklick-Wrapper um dieses Skript. Ein eigener nativer Installer mit vollständig eingebetteten MSI-Paketen ist erst nötig, wenn `winget` für Zielkunden nicht zuverlässig genug ist oder Offline-Installationen unterstützt werden müssen.

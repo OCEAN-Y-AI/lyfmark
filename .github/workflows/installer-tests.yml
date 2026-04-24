@@ -81,3 +81,54 @@ jobs:
 
       - name: Run Installer E2E Auto Test
         run: npm run test:installer:e2e:auto
+
+  windows-install-script:
+    name: windows-install-script
+    runs-on: windows-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run Windows Install Script
+        shell: pwsh
+        run: |
+          $installRoot = Join-Path $env:RUNNER_TEMP "lyfmark-script-install"
+          $testHome = Join-Path $env:RUNNER_TEMP "lyfmark-script-home"
+          $mockUrlLog = Join-Path $env:RUNNER_TEMP "lyfmark-github-url.log"
+          New-Item -ItemType Directory -Force -Path $installRoot | Out-Null
+          New-Item -ItemType Directory -Force -Path $testHome | Out-Null
+          $env:HOME = $testHome
+          $env:USERPROFILE = $testHome
+          $env:LYFMARK_INSTALLER_MOCK_OPEN_URL_LOG = $mockUrlLog
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\installer\windows\install.ps1" `
+            -RepositoryUrl $PWD.Path `
+            -InstallDirectory $installRoot `
+            -Yes `
+            -GitName "Installer CI User" `
+            -GitEmail "installer-ci@example.com" `
+            -SshComment "installer-ci@example.com" `
+            -SkipToolInstall `
+            -SkipVSCode `
+            -SkipOpenWorkspace `
+            -NoPause
+
+          $projectRoot = Join-Path $installRoot "lyfmark"
+          if (-not (Test-Path (Join-Path $projectRoot "package.json"))) {
+            throw "Installed project package.json missing."
+          }
+          if (-not (Test-Path (Join-Path $projectRoot "node_modules"))) {
+            throw "Installed project dependencies missing."
+          }
+          if (-not (Test-Path (Join-Path $projectRoot "src\pages"))) {
+            throw "Installed project src/pages mirror missing."
+          }
+          if (-not (Test-Path $mockUrlLog)) {
+            throw "GitHub URL mock log missing."
+          }

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
-import { mkdtemp } from "node:fs/promises"
+import { mkdtemp, readFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import { test } from "node:test"
@@ -10,6 +10,7 @@ const WIZARD_PATH = path.join(PROJECT_ROOT, "tools", "installer", "wizard.mjs")
 const LINUX_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "linux", "install.sh")
 const MACOS_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "macos", "install.command")
 const WINDOWS_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "windows", "install.cmd")
+const WINDOWS_INSTALL_SCRIPT_PATH = path.join(PROJECT_ROOT, "installer", "windows", "install.ps1")
 
 const BASE_NON_INTERACTIVE_ARGS = ["--yes", "--skip-git-identity", "--skip-ssh", "--skip-dependencies"]
 
@@ -56,6 +57,17 @@ test("installer wizard fails outside project root", async () => {
 	})
 	assert.notEqual(result.code, 0)
 	assert.match(outputOf(result), /Installer muss im Projekt-Root ausgeführt werden/u)
+})
+
+test("windows install script exposes remote bootstrap contract", async () => {
+	const source = await readFile(WINDOWS_INSTALL_SCRIPT_PATH, "utf8")
+
+	assert.match(source, /\$RepositoryUrl = "https:\/\/github\.com\/OCEAN-Y-AI\/lyfmark\.git"/u)
+	assert.match(source, /Install-WingetPackage "Git\.Git" "Git" "git"/u)
+	assert.match(source, /Install-WingetPackage "OpenJS\.NodeJS\.LTS" "Node\.js LTS" "node"/u)
+	assert.match(source, /Install-WingetPackage "Microsoft\.VisualStudioCode" "Visual Studio Code" "code"/u)
+	assert.match(source, /git".*@\("clone", "--depth", "1", \$RepositoryUrl, \$projectDirectory\)/us)
+	assert.match(source, /node".*\$wizardArguments.*"LyfMark Installer ausführen"/us)
 })
 
 test(

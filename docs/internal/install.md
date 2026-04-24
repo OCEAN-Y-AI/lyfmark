@@ -63,19 +63,35 @@ Installer-Integration:
 
 ## Geführter Installer (Doppelklick)
 
-- Einstieg über OS-Wrapper:
+- Zielbild für Endkunden: `LyfMark-Setup.exe` als einziges Doppelklick-Artefakt.
+- Windows-Bootstrap-Skript für aktuelle Tests und den späteren `.exe`-Wrapper: `installer/windows/install.ps1`.
+- Projektinterne OS-Wrapper für bereits geladene Projektordner:
   - Windows: `installer/windows/install.cmd`
   - macOS: `installer/macos/install.command`
   - Linux: `installer/linux/install.sh`
-- Technischer Kern: `tools/installer/wizard.mjs`
+- Technischer Projekt-Wizard: `tools/installer/wizard.mjs`
 - npm-Shortcut: `npm run installer:wizard`
 
-Der Wizard prüft/geführt:
+Das Windows-Bootstrap-Skript:
+
+- installiert/prüft Git, Node.js/npm, `ssh-keygen` und Visual Studio Code
+- lädt das LyfMark-Projekt aus GitHub
+- startet danach den Projekt-Wizard
+- öffnet am Ende die Customer-Workspace in Visual Studio Code
+
+Der Projekt-Wizard prüft/geführt:
 
 - Pflicht-Tools (`node`, `npm`, `git`, `ssh-keygen`)
 - Git-Identität (`user.name`, `user.email`)
 - SSH-Key-Setup für GitHub
 - `npm install` und anschließend `npm run repair`
+
+Manueller Windows-VM-Test des aktuellen GitHub-Skripts:
+
+- Skript laden:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri https://raw.githubusercontent.com/OCEAN-Y-AI/lyfmark/main/installer/windows/install.ps1 -OutFile $env:TEMP\lyfmark-install.ps1"`
+- Skript ausführen:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\lyfmark-install.ps1`
 
 ## Installer-Tests (für CI und manuelle VM-Prüfung)
 
