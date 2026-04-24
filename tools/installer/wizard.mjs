@@ -3,6 +3,7 @@ import { access, appendFile, constants, mkdir, readFile } from "node:fs/promises
 import os from "node:os"
 import path from "node:path"
 import readline from "node:readline/promises"
+import { createSpawnEnv, resolveCommandInvocation } from "./command-resolution.mjs"
 
 const PROJECT_ROOT = process.cwd()
 const SSH_PRIVATE_KEY_PATH = path.join(os.homedir(), ".ssh", "id_ed25519")
@@ -13,7 +14,6 @@ const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads"
 const DEFAULT_GIT_NAME_ENV = "LYFMARK_INSTALLER_DEFAULT_GIT_NAME"
 const DEFAULT_GIT_EMAIL_ENV = "LYFMARK_INSTALLER_DEFAULT_GIT_EMAIL"
 const DEFAULT_SSH_COMMENT_ENV = "LYFMARK_INSTALLER_DEFAULT_SSH_COMMENT"
-const WINDOWS_COMMAND_SCRIPT_EXECUTABLES = new Set(["npm"])
 
 const BOOLEAN_OPTIONS = new Map([
 	["--yes", "yes"],
@@ -28,24 +28,6 @@ const VALUE_OPTIONS = new Map([
 	["--git-email", "gitEmail"],
 	["--ssh-comment", "sshComment"],
 ])
-
-/**
- * Resolves a command to spawn parameters that are safe for the current OS.
- *
- * Windows command scripts such as npm.cmd must run through cmd.exe instead of being spawned as native executables.
- */
-const resolveCommandInvocation = (command, args) => {
-	if (process.platform === "win32" && WINDOWS_COMMAND_SCRIPT_EXECUTABLES.has(command)) {
-		return {
-			executable: "cmd.exe",
-			args: ["/d", "/s", "/c", `${command}.cmd`, ...args],
-		}
-	}
-	return {
-		executable: command,
-		args,
-	}
-}
 
 const createDefaultOptions = () => ({
 	yes: false,
@@ -204,11 +186,12 @@ const formatCommandFailure = (result) => {
 
 const runCommandCapture = async (command, args, contextLabel) =>
 	await new Promise((resolve) => {
-		const invocation = resolveCommandInvocation(command, args)
 		let child
 		try {
+			const invocation = resolveCommandInvocation(command, args)
 			child = spawn(invocation.executable, invocation.args, {
 				cwd: PROJECT_ROOT,
+				env: createSpawnEnv(),
 				stdio: ["ignore", "pipe", "pipe"],
 				windowsHide: true,
 			})
@@ -271,11 +254,12 @@ const writeChunk = (stream, chunk) => {
 
 const runCommandInteractive = async (command, args, contextLabel) =>
 	await new Promise((resolve) => {
-		const invocation = resolveCommandInvocation(command, args)
 		let child
 		try {
+			const invocation = resolveCommandInvocation(command, args)
 			child = spawn(invocation.executable, invocation.args, {
 				cwd: PROJECT_ROOT,
+				env: createSpawnEnv(),
 				stdio: ["ignore", "pipe", "pipe"],
 				windowsHide: true,
 			})
@@ -333,6 +317,10 @@ const runCommandInteractive = async (command, args, contextLabel) =>
 	})
 
 const commandExists = async (command) => {
+	if (process.platform === "win32" && command === "npm") {
+		const result = await runCommandCapture("npm", ["--version"], "npm --version")
+		return result.ok
+	}
 	if (process.platform === "win32") {
 		const result = await runCommandCapture("where", [command], `where ${command}`)
 		return result.ok

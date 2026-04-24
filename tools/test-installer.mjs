@@ -4,6 +4,11 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises"
 import os from "node:os"
 import path from "node:path"
 import { test } from "node:test"
+import {
+	collectWindowsPathSegments,
+	createSpawnEnv,
+	resolveCommandInvocation,
+} from "./installer/command-resolution.mjs"
 
 const PROJECT_ROOT = process.cwd()
 const WIZARD_PATH = path.join(PROJECT_ROOT, "tools", "installer", "wizard.mjs")
@@ -123,6 +128,61 @@ test("installer wizard accepts install info file for wrapper-provided data", asy
 	assert.match(result.stdout, /\[installer\] Repair skipped/u)
 })
 
+test("installer command resolution handles Windows PATH variants and npm reliably", () => {
+	const env = {
+		PATH: "C:\\stale-bin;C:\\shared-bin",
+		Path: "C:\\Program Files\\nodejs;C:\\shared-bin",
+	}
+	const nodePath = "C:\\Program Files\\nodejs\\node.exe"
+	const npmCliPath = "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js"
+	const fileExists = (candidate) => candidate === npmCliPath
+
+	assert.deepEqual(collectWindowsPathSegments(env), [
+		"C:\\Program Files\\nodejs",
+		"C:\\shared-bin",
+		"C:\\stale-bin",
+	])
+
+	assert.deepEqual(createSpawnEnv({ platform: "win32", env }), {
+		PATH: "C:\\Program Files\\nodejs;C:\\shared-bin;C:\\stale-bin",
+	})
+
+	assert.deepEqual(
+		resolveCommandInvocation("npm", ["install"], {
+			platform: "win32",
+			env,
+			execPath: nodePath,
+			fileExists,
+		}),
+		{
+			executable: nodePath,
+			args: [npmCliPath, "install"],
+		},
+	)
+})
+
+test("installer command resolution falls back to absolute npm.cmd when npm CLI is unavailable", () => {
+	const env = {
+		Path: "C:\\Program Files\\nodejs",
+	}
+	const nodePath = "C:\\Program Files\\nodejs\\node.exe"
+	const npmCmdPath = "C:\\Program Files\\nodejs\\npm.cmd"
+	const fileExists = (candidate) => candidate === npmCmdPath
+
+	assert.deepEqual(
+		resolveCommandInvocation("npm", ["run", "repair"], {
+			platform: "win32",
+			env,
+			execPath: nodePath,
+			fileExists,
+		}),
+		{
+			executable: "cmd.exe",
+			args: ["/d", "/c", `"${npmCmdPath}" run repair`],
+		},
+	)
+})
+
 test("installer wizard uses robust child-process handling", async () => {
 	const source = await readFile(WIZARD_PATH, "utf8")
 	const e2eSource = await readFile(INSTALLER_E2E_TEST_PATH, "utf8")
@@ -130,10 +190,10 @@ test("installer wizard uses robust child-process handling", async () => {
 	assert.doesNotMatch(source, /stdio:\s*"inherit"/u)
 	assert.match(source, /stdio: \["ignore", "pipe", "pipe"\]/u)
 	assert.match(source, /formatCommandFailure/u)
-	assert.match(source, /WINDOWS_COMMAND_SCRIPT_EXECUTABLES = new Set\(\["npm"\]\)/u)
-	assert.match(source, /executable: "cmd\.exe"/u)
-	assert.match(source, /args: \["\/d", "\/s", "\/c", `\$\{command\}\.cmd`, \.\.\.args\]/u)
-	assert.doesNotMatch(source, /return "npm\.cmd"/u)
+	assert.match(source, /createSpawnEnv/u)
+	assert.match(source, /resolveCommandInvocation/u)
+	assert.match(source, /npm --version/u)
+	assert.doesNotMatch(source, /args: \["\/d", "\/s", "\/c", `\$\{command\}\.cmd`, \.\.\.args\]/u)
 	assert.match(e2eSource, /command: WINDOWS_WRAPPER_PATH/u)
 	assert.match(e2eSource, /buildArgs: \(wrapperArgs\) => wrapperArgs/u)
 	assert.match(e2eSource, /shell: true/u)

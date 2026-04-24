@@ -53,7 +53,7 @@ Details stehen in `docs/**` und werden von hier aus verlinkt.
 - Installer-, Repair-, CI- und sonstige technische Konsolenausgaben grundsätzlich auf Englisch und möglichst ASCII-sicher formulieren; lokalisierte Endkundendokumentation bleibt davon unberührt.
 - GUI-Installer-Wrapper sollen Setup-Daten bevorzugt per strukturierter Install-Info-JSON an Skripte übergeben; direkte CLI-Parameter bleiben Support-/CI-Vertrag.
 - VS-Code-Extension-Installation niemals per `runOn: folderOpen`-Task starten; solche Tasks können beim Öffnen der Customer-Workspace wieder `code` ausführen und Fenster-Schleifen verursachen. Extension-Setup gehört in Installer/Repair-Flow.
-- Windows-Installer-/Wizard-Code darf `npm.cmd` nicht direkt als Executable spawnen; `npm`-Befehle müssen über `cmd.exe /d /s /c npm.cmd ...` mit gepipter Ausgabe laufen.
+- Windows-Installer-/Wizard-Code darf `npm`/`npm.cmd` nicht als bloßen Namen auflösen; `npm`-Befehle müssen über die zum aktiven `node.exe` gehörende `npm-cli.js` oder einen absoluten `npm.cmd`-Pfad laufen, mit normalisiertem `PATH` und gepipter Ausgabe.
 - Nach jedem Arbeitsschritt aktiv prüfen, ob dabei eine wertvolle, verallgemeinerbare Erkenntnis entstanden ist, die künftige Arbeit verbessert.
 - Solche Erkenntnisse immer passend festhalten: allgemeine Arbeitsregeln in `AGENTS.md`, themenspezifische Erkenntnisse in `docs/**`, kritische Prüffälle in `testcases.md` und aufgabenspezifische Zwischenstände in `todo.md`.
 - Diese Lernpflege gilt für alle Arbeiten im Projekt, nicht nur für Dokumentation. Sie soll die künftige Qualität verbessern, ohne in unnötige Detailverwaltung oder Hyperfokus abzugleiten.

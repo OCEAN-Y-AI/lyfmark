@@ -109,7 +109,7 @@ Projekt-Wizard (`tools/installer/wizard.mjs`):
 	- `--skip-dependencies`
 	- `--skip-repair`
 - npm-Shortcut: `npm run installer:wizard`
-- Windows-Regel: `npm`-Befehle werden im Wizard über `cmd.exe /d /s /c npm.cmd ...` gestartet. Das ist nötig, weil `npm` dort als `.cmd`-Script bereitsteht; echte Executables wie `git` oder `ssh-keygen` werden weiterhin direkt gestartet.
+- Windows-Regel: `npm`-Befehle werden im Wizard nicht über einen bloßen Namen gestartet. Der Wizard bevorzugt die `npm-cli.js`, die zum aktiven `node.exe` gehört, und nutzt nur als Fallback einen absoluten `npm.cmd`-Pfad über `cmd.exe`. Zusätzlich werden Windows-`Path`/`PATH`-Varianten vor Child-Prozessen normalisiert, damit PowerShell-, GitHub-Actions- und GUI-Installer-Kontexte denselben Suchpfad verwenden. Echte Executables wie `git` oder `ssh-keygen` werden weiterhin direkt gestartet.
 
 Non-interactive (`--yes`) contract:
 
@@ -151,6 +151,12 @@ CI-Contract:
 	- Wrapper-Smoke-Test je Plattform mit Argument-Weitergabe
 	- vollständiger E2E-Installlauf je Plattform (`ubuntu-latest`, `macos-latest`, `windows-latest`) mit Wizard + Wrapper + `npm install` + `npm run repair`
 	- Windows-Bootstrap-Skript als echten Einstiegspunkt (`installer/windows/install.ps1`) gegen ein frisches Zielverzeichnis
+
+Lokaler Vorabtest für Windows:
+
+- Vor einem Push kann der aktuelle Working Tree in ein temporäres lokales Git-Repository kopiert und `installer/windows/install.ps1` per Windows PowerShell dagegen ausgeführt werden. Das testet den echten Bootstrap-Pfad ohne GitHub-Update.
+- Der Installationsordner muss auf einem nativen Windows-Laufwerk liegen, z. B. unter `%TEMP%`. WSL-UNC-Pfade (`\\wsl.localhost\...`) oder per `pushd` gemappte WSL-Laufwerke reichen nur für Teiltests: `npm install` kann starten, aber Paket-Lifecycle-Skripte und Junction-/Symlink-Erstellung können dort an Windows-/WSL-Dateisystemgrenzen scheitern.
+- Wenn Codex diesen Test aus WSL ausführen soll, muss ein temporärer Windows-Pfad in der Sandbox beschreibbar sein.
 
 ## VS-Code-Extension-Installation
 
