@@ -2,6 +2,7 @@
 
 [CmdletBinding()]
 param(
+	[string]$InstallInfoPath = "",
 	[string]$RepositoryUrl = "https://github.com/OCEAN-Y-AI/lyfmark.git",
 	[string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "LyfMark"),
 	[string]$ProjectName = "",
@@ -12,6 +13,7 @@ param(
 	[switch]$SkipToolInstall,
 	[switch]$SkipVSCode,
 	[switch]$SkipOpenWorkspace,
+	[switch]$AdminToolInstallOnly,
 	[switch]$NoPause
 )
 
@@ -21,6 +23,7 @@ $ProgressPreference = "SilentlyContinue"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 chcp.com 65001 | Out-Null
 $script:EffectiveProjectName = ""
+$script:InitialBoundParameters = @{} + $PSBoundParameters
 
 function Write-Step {
 	param([string]$Message)
@@ -87,8 +90,116 @@ function Invoke-NativeCommand {
 	}
 
 	if ($LASTEXITCODE -ne 0) {
+		if ($LASTEXITCODE -eq 3010) {
+			throw "$Label requires a Windows restart. Restart Windows and run LyfMark again."
+		}
 		throw "$Label failed with exit code $LASTEXITCODE."
 	}
+}
+
+function Get-InstallInfoValue {
+	param(
+		[object]$InstallInfo,
+		[string[]]$Names
+	)
+
+	foreach ($name in $Names) {
+		$property = $InstallInfo.PSObject.Properties[$name]
+		if ($null -ne $property) {
+			return $property.Value
+		}
+	}
+	return $null
+}
+
+function Set-StringParameterFromInstallInfo {
+	param(
+		[object]$InstallInfo,
+		[string]$ParameterName,
+		[string[]]$InfoNames
+	)
+
+	if ($script:InitialBoundParameters.ContainsKey($ParameterName)) {
+		return
+	}
+
+	$value = Get-InstallInfoValue $InstallInfo $InfoNames
+	if ($null -eq $value) {
+		return
+	}
+
+	$text = ([string]$value).Trim()
+	if ($text.Length -eq 0) {
+		return
+	}
+
+	Set-Variable -Name $ParameterName -Scope Script -Value $text
+}
+
+function Set-SwitchParameterFromInstallInfo {
+	param(
+		[object]$InstallInfo,
+		[string]$ParameterName,
+		[string[]]$InfoNames
+	)
+
+	if ($script:InitialBoundParameters.ContainsKey($ParameterName)) {
+		return
+	}
+
+	$value = Get-InstallInfoValue $InstallInfo $InfoNames
+	if ($null -eq $value) {
+		return
+	}
+
+	if ($value -is [bool]) {
+		Set-Variable -Name $ParameterName -Scope Script -Value $value
+		return
+	}
+
+	$text = ([string]$value).Trim().ToLowerInvariant()
+	if (@("1", "true", "yes", "y") -contains $text) {
+		Set-Variable -Name $ParameterName -Scope Script -Value $true
+		return
+	}
+	if (@("0", "false", "no", "n") -contains $text) {
+		Set-Variable -Name $ParameterName -Scope Script -Value $false
+		return
+	}
+
+	throw "Install info value '$ParameterName' must be true or false."
+}
+
+function Import-InstallInfo {
+	if ([string]::IsNullOrWhiteSpace($InstallInfoPath)) {
+		return
+	}
+
+	$resolvedPath = [IO.Path]::GetFullPath($InstallInfoPath)
+	if (-not (Test-Path -LiteralPath $resolvedPath)) {
+		throw "Install info file was not found: $resolvedPath"
+	}
+
+	try {
+		$installInfo = Get-Content -LiteralPath $resolvedPath -Raw | ConvertFrom-Json
+	} catch {
+		throw "Install info file is not valid JSON: $resolvedPath"
+	}
+	if ($null -eq $installInfo -or $installInfo -is [array]) {
+		throw "Install info file must contain one JSON object: $resolvedPath"
+	}
+
+	Set-StringParameterFromInstallInfo $installInfo "RepositoryUrl" @("repositoryUrl")
+	Set-StringParameterFromInstallInfo $installInfo "InstallDirectory" @("installDirectory", "targetDirectory")
+	Set-StringParameterFromInstallInfo $installInfo "ProjectName" @("projectName", "websiteName")
+	Set-StringParameterFromInstallInfo $installInfo "GitName" @("gitName")
+	Set-StringParameterFromInstallInfo $installInfo "GitEmail" @("gitEmail")
+	Set-StringParameterFromInstallInfo $installInfo "SshComment" @("sshComment")
+	Set-SwitchParameterFromInstallInfo $installInfo "Yes" @("yes", "nonInteractive")
+	Set-SwitchParameterFromInstallInfo $installInfo "SkipToolInstall" @("skipToolInstall")
+	Set-SwitchParameterFromInstallInfo $installInfo "SkipVSCode" @("skipVSCode")
+	Set-SwitchParameterFromInstallInfo $installInfo "SkipOpenWorkspace" @("skipOpenWorkspace")
+	Set-SwitchParameterFromInstallInfo $installInfo "NoPause" @("noPause")
 }
 
 function Get-SafeProjectName {
@@ -137,7 +248,10 @@ function Resolve-ProjectName {
 }
 
 function ConvertTo-ArgumentList {
-	param([string]$ResolvedProjectName)
+	param(
+		[string]$ResolvedProjectName,
+		[bool]$ToolInstallOnly = $false
+	)
 
 	$arguments = @(
 		"-NoProfile",
@@ -169,6 +283,9 @@ function ConvertTo-ArgumentList {
 	if ($SkipOpenWorkspace) {
 		$arguments += "-SkipOpenWorkspace"
 	}
+	if ($ToolInstallOnly) {
+		$arguments += "-AdminToolInstallOnly"
+	}
 	if ($NoPause) {
 		$arguments += "-NoPause"
 	}
@@ -196,16 +313,26 @@ function Test-ToolInstallNeeded {
 	return $false
 }
 
-function Restart-ElevatedIfNeeded {
+function Invoke-ElevatedToolInstallIfNeeded {
 	if ($SkipToolInstall -or (Test-Administrator) -or -not (Test-ToolInstallNeeded)) {
 		return
 	}
 
 	Write-Step "Requesting administrator permission"
 	Write-Host "[lyfmark-install] Windows may ask for permission once so LyfMark can install required programs."
-	$argumentList = ConvertTo-ArgumentList $script:EffectiveProjectName
+	$argumentList = ConvertTo-ArgumentList $script:EffectiveProjectName $true
+	if ($argumentList -notcontains "-NoPause") {
+		$argumentList += "-NoPause"
+	}
 	$process = Start-Process -FilePath "powershell.exe" -ArgumentList $argumentList -Verb RunAs -Wait -PassThru
-	exit $process.ExitCode
+	if ($process.ExitCode -ne 0) {
+		throw "Administrator tool installation failed with exit code $($process.ExitCode)."
+	}
+
+	Update-CurrentProcessPath
+	if (Test-ToolInstallNeeded) {
+		throw "Administrator tool installation finished, but required programs are still unavailable. Restart Windows and run LyfMark again."
+	}
 }
 
 function Install-WingetPackage {
@@ -237,6 +364,7 @@ function Install-WingetPackage {
 		"--source", "winget",
 		"--accept-package-agreements",
 		"--accept-source-agreements",
+		"--disable-interactivity",
 		"--silent"
 	) "winget install $PackageId"
 
@@ -304,12 +432,12 @@ function Invoke-ProjectWizard {
 		if ([string]::IsNullOrWhiteSpace($GitName) -or [string]::IsNullOrWhiteSpace($GitEmail)) {
 			throw "-Yes requires -GitName and -GitEmail."
 		}
-		$env:LYFMARK_INSTALLER_DEFAULT_GIT_NAME = $GitName
-		$env:LYFMARK_INSTALLER_DEFAULT_GIT_EMAIL = $GitEmail
-		if (-not [string]::IsNullOrWhiteSpace($SshComment)) {
-			$env:LYFMARK_INSTALLER_DEFAULT_SSH_COMMENT = $SshComment
-		}
 		$wizardArguments += "--yes"
+		$wizardArguments += @("--git-name", $GitName)
+		$wizardArguments += @("--git-email", $GitEmail)
+		if (-not [string]::IsNullOrWhiteSpace($SshComment)) {
+			$wizardArguments += @("--ssh-comment", $SshComment)
+		}
 	}
 
 	Invoke-NativeCommand "node" $wizardArguments "Run LyfMark installer" $ProjectDirectory
@@ -424,14 +552,22 @@ function Main {
 		throw "This installation script is only supported on Windows."
 	}
 
+	Import-InstallInfo
+
 	Write-Host "[lyfmark-install] LyfMark installation started."
 	Write-Host "[lyfmark-install] Target folder: $InstallDirectory"
 	Write-Host "[lyfmark-install] Source: $RepositoryUrl"
 
+	if ($AdminToolInstallOnly) {
+		Ensure-RequiredTools
+		Write-Host "[lyfmark-install] Required programs are ready."
+		return
+	}
+
 	$script:EffectiveProjectName = Resolve-ProjectName
 	Write-Host "[lyfmark-install] Project name: $script:EffectiveProjectName"
 
-	Restart-ElevatedIfNeeded
+	Invoke-ElevatedToolInstallIfNeeded
 	Ensure-RequiredTools
 	$projectDirectory = Install-ProjectSources
 	Invoke-ProjectWizard $projectDirectory

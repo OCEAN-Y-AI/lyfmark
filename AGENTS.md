@@ -51,6 +51,7 @@ Details stehen in `docs/**` und werden von hier aus verlinkt.
 - Vor jeder Änderung an Kunden-, Modul- oder Redaktionsdokumentation immer zuerst `docs/internal/kunden-doku-leitfaden.md` vollständig lesen und die Formulierungen daran ausrichten.
 - Deutschsprachige Nutzer-, Kunden- und Redaktionsausgaben immer mit korrekten Umlauten und ß schreiben; Umschreibungen wie `ae/oe/ue/ss` sind in sichtbaren Texten zu vermeiden.
 - Installer-, Repair-, CI- und sonstige technische Konsolenausgaben grundsätzlich auf Englisch und möglichst ASCII-sicher formulieren; lokalisierte Endkundendokumentation bleibt davon unberührt.
+- GUI-Installer-Wrapper sollen Setup-Daten bevorzugt per strukturierter Install-Info-JSON an Skripte übergeben; direkte CLI-Parameter bleiben Support-/CI-Vertrag.
 - VS-Code-Extension-Installation niemals per `runOn: folderOpen`-Task starten; solche Tasks können beim Öffnen der Customer-Workspace wieder `code` ausführen und Fenster-Schleifen verursachen. Extension-Setup gehört in Installer/Repair-Flow.
 - Nach jedem Arbeitsschritt aktiv prüfen, ob dabei eine wertvolle, verallgemeinerbare Erkenntnis entstanden ist, die künftige Arbeit verbessert.
 - Solche Erkenntnisse immer passend festhalten: allgemeine Arbeitsregeln in `AGENTS.md`, themenspezifische Erkenntnisse in `docs/**`, kritische Prüffälle in `testcases.md` und aufgabenspezifische Zwischenstände in `todo.md`.

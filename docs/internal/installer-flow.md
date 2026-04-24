@@ -1,6 +1,6 @@
 # Installer-Flow (Doppelklick, nicht-technisch)
 
-Stand: 22.04.2026
+Stand: 24.04.2026
 
 ## Ziel
 
@@ -54,6 +54,7 @@ Der Erststart muss ohne manuelle Terminal-Bedienung möglich sein: Doppelklick a
 
 Windows-Bootstrap (`installer/windows/install.ps1`):
 
+- `-InstallInfoPath <pfad>`
 - `-RepositoryUrl <url>`
 - `-InstallDirectory <pfad>`
 - `-ProjectName <name>`
@@ -66,10 +67,43 @@ Windows-Bootstrap (`installer/windows/install.ps1`):
 - `-SkipOpenWorkspace`
 - `-NoPause`
 
+Install-Info-Datei:
+
+- Bevorzugter Vertrag für spätere GUI-Wrapper, weil Pfade, Namen und E-Mail-Adressen nicht fragil über Shell-Quoting zusammengesetzt werden müssen.
+- Direkte CLI-Parameter haben Vorrang vor Werten aus der Datei.
+- Unterstützte JSON-Felder:
+	- `repositoryUrl`
+	- `installDirectory` oder `targetDirectory`
+	- `projectName` oder `websiteName`
+	- `gitName`
+	- `gitEmail`
+	- `sshComment`
+	- `yes` oder `nonInteractive`
+	- `skipToolInstall`
+	- `skipVSCode`
+	- `skipOpenWorkspace`
+	- `noPause`
+
+Beispiel:
+
+```json
+{
+	"projectName": "Example Website",
+	"gitName": "Jane Doe",
+	"gitEmail": "jane@example.com",
+	"sshComment": "jane@example.com",
+	"yes": true
+}
+```
+
 Projekt-Wizard (`tools/installer/wizard.mjs`):
 
 - Für Skriptläufe und Support sind folgende Optionen verfügbar:
 	- `--yes`
+	- `--install-info <pfad>` oder `--install-info=<pfad>`
+	- `--git-name <name>` oder `--git-name=<name>`
+	- `--git-email <email>` oder `--git-email=<email>`
+	- `--ssh-comment <email/oder kommentar>` oder `--ssh-comment=<email/oder kommentar>`
 	- `--skip-git-identity`
 	- `--skip-ssh`
 	- `--skip-dependencies`
@@ -83,6 +117,14 @@ Non-interactive (`--yes`) contract:
 	- `LYFMARK_INSTALLER_DEFAULT_GIT_EMAIL`
 - Optional für SSH-Kommentar:
 	- `LYFMARK_INSTALLER_DEFAULT_SSH_COMMENT`
+
+Admin-/Tool-Installationsvertrag:
+
+- Elevation wird nur für fehlende Systemprogramme verwendet.
+- Der erhöhte Prozess läuft mit `-AdminToolInstallOnly` und beendet sich ohne Pause.
+- Danach läuft der eigentliche Projekt-Setup wieder im normalen Nutzerkontext weiter.
+- `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
+- Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
 
 ## Automatisierte Tests (CI)
 

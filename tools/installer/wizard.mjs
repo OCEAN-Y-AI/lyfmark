@@ -14,7 +14,19 @@ const DEFAULT_GIT_NAME_ENV = "LYFMARK_INSTALLER_DEFAULT_GIT_NAME"
 const DEFAULT_GIT_EMAIL_ENV = "LYFMARK_INSTALLER_DEFAULT_GIT_EMAIL"
 const DEFAULT_SSH_COMMENT_ENV = "LYFMARK_INSTALLER_DEFAULT_SSH_COMMENT"
 
-const OPTION_DEFINITIONS = new Set(["--yes", "--skip-git-identity", "--skip-ssh", "--skip-dependencies", "--skip-repair"])
+const BOOLEAN_OPTIONS = new Map([
+	["--yes", "yes"],
+	["--skip-git-identity", "skipGitIdentity"],
+	["--skip-ssh", "skipSsh"],
+	["--skip-dependencies", "skipDependencies"],
+	["--skip-repair", "skipRepair"],
+])
+const VALUE_OPTIONS = new Map([
+	["--install-info", "installInfoPath"],
+	["--git-name", "gitName"],
+	["--git-email", "gitEmail"],
+	["--ssh-comment", "sshComment"],
+])
 
 const resolveExecutable = (command) => {
 	if (process.platform === "win32" && command === "npm") {
@@ -23,41 +35,191 @@ const resolveExecutable = (command) => {
 	return command
 }
 
-const parseOptions = (argv) => {
-	const options = {
-		yes: false,
-		skipGitIdentity: false,
-		skipSsh: false,
-		skipDependencies: false,
-		skipRepair: false,
+const createDefaultOptions = () => ({
+	yes: false,
+	skipGitIdentity: false,
+	skipSsh: false,
+	skipDependencies: false,
+	skipRepair: false,
+	installInfoPath: "",
+	gitName: "",
+	gitEmail: "",
+	sshComment: "",
+})
+
+const readInstallInfo = async (installInfoPath) => {
+	const resolvedPath = path.resolve(installInfoPath)
+	try {
+		const parsedInfo = JSON.parse(await readFile(resolvedPath, "utf8"))
+		if (parsedInfo === null || typeof parsedInfo !== "object" || Array.isArray(parsedInfo)) {
+			throw new Error("Root value must be a JSON object.")
+		}
+		return parsedInfo
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error)
+		throw new Error(`Install info file could not be read as JSON: ${resolvedPath}. ${detail}`)
+	}
+}
+
+const readInstallInfoValue = (installInfo, names) => {
+	for (const name of names) {
+		if (Object.prototype.hasOwnProperty.call(installInfo, name)) {
+			return installInfo[name]
+		}
+	}
+	return undefined
+}
+
+const applyInstallInfoString = (options, providedOptions, installInfo, optionName, infoNames) => {
+	if (providedOptions.has(optionName)) {
+		return
+	}
+	const value = readInstallInfoValue(installInfo, infoNames)
+	if (typeof value !== "string" || value.trim().length === 0) {
+		return
+	}
+	options[optionName] = value.trim()
+}
+
+const applyInstallInfoBoolean = (options, providedOptions, installInfo, optionName, infoNames) => {
+	if (providedOptions.has(optionName)) {
+		return
+	}
+	const value = readInstallInfoValue(installInfo, infoNames)
+	if (typeof value === "boolean") {
+		options[optionName] = value
+		return
+	}
+	if (typeof value === "string") {
+		const normalizedValue = value.trim().toLowerCase()
+		if (["1", "true", "yes", "y"].includes(normalizedValue)) {
+			options[optionName] = true
+			return
+		}
+		if (["0", "false", "no", "n"].includes(normalizedValue)) {
+			options[optionName] = false
+			return
+		}
+	}
+	if (typeof value !== "undefined") {
+		throw new Error(`Install info value "${optionName}" must be true or false.`)
+	}
+}
+
+const applyInstallInfo = async (options, providedOptions) => {
+	if (options.installInfoPath.length === 0) {
+		return
+	}
+	const installInfo = await readInstallInfo(options.installInfoPath)
+
+	applyInstallInfoBoolean(options, providedOptions, installInfo, "yes", ["yes", "nonInteractive"])
+	applyInstallInfoBoolean(options, providedOptions, installInfo, "skipGitIdentity", ["skipGitIdentity"])
+	applyInstallInfoBoolean(options, providedOptions, installInfo, "skipSsh", ["skipSsh"])
+	applyInstallInfoBoolean(options, providedOptions, installInfo, "skipDependencies", ["skipDependencies"])
+	applyInstallInfoBoolean(options, providedOptions, installInfo, "skipRepair", ["skipRepair"])
+	applyInstallInfoString(options, providedOptions, installInfo, "gitName", ["gitName"])
+	applyInstallInfoString(options, providedOptions, installInfo, "gitEmail", ["gitEmail"])
+	applyInstallInfoString(options, providedOptions, installInfo, "sshComment", ["sshComment"])
+}
+
+const readOptionValue = (argv, index, optionName, inlineValue) => {
+	if (typeof inlineValue === "string") {
+		if (inlineValue.length === 0) {
+			throw new Error(`Installer option "${optionName}" requires a value.`)
+		}
+		return {
+			value: inlineValue,
+			nextIndex: index,
+		}
+	}
+	const nextValue = argv[index + 1]
+	if (typeof nextValue !== "string" || nextValue.startsWith("--")) {
+		throw new Error(`Installer option "${optionName}" requires a value.`)
+	}
+	return {
+		value: nextValue,
+		nextIndex: index + 1,
+	}
+}
+
+const parseOptions = async (argv) => {
+	const options = createDefaultOptions()
+	const providedOptions = new Set()
+
+	for (let index = 0; index < argv.length; index += 1) {
+		const argument = argv[index]
+		const equalsIndex = argument.indexOf("=")
+		const optionName = equalsIndex >= 0 ? argument.slice(0, equalsIndex) : argument
+		const inlineValue = equalsIndex >= 0 ? argument.slice(equalsIndex + 1) : undefined
+
+		if (BOOLEAN_OPTIONS.has(optionName)) {
+			if (typeof inlineValue !== "undefined") {
+				throw new Error(`Installer option "${optionName}" does not accept a value.`)
+			}
+			const propertyName = BOOLEAN_OPTIONS.get(optionName)
+			options[propertyName] = true
+			providedOptions.add(propertyName)
+			continue
+		}
+
+		if (VALUE_OPTIONS.has(optionName)) {
+			const propertyName = VALUE_OPTIONS.get(optionName)
+			const parsedValue = readOptionValue(argv, index, optionName, inlineValue)
+			options[propertyName] = parsedValue.value.trim()
+			providedOptions.add(propertyName)
+			index = parsedValue.nextIndex
+			continue
+		}
+
+		throw new Error(`Unknown installer option "${argument}".`)
 	}
 
-	for (const argument of argv) {
-		if (!OPTION_DEFINITIONS.has(argument)) {
-			throw new Error(`Unknown installer option "${argument}".`)
-		}
-		if (argument === "--yes") {
-			options.yes = true
-		} else if (argument === "--skip-git-identity") {
-			options.skipGitIdentity = true
-		} else if (argument === "--skip-ssh") {
-			options.skipSsh = true
-		} else if (argument === "--skip-dependencies") {
-			options.skipDependencies = true
-		} else if (argument === "--skip-repair") {
-			options.skipRepair = true
-		}
-	}
-
+	await applyInstallInfo(options, providedOptions)
 	return options
 }
 
+const formatCommandFailure = (result) => {
+	if (result.error instanceof Error) {
+		const code = typeof result.error.code === "string" ? result.error.code : result.error.name
+		return `${result.contextLabel} failed to start (${code}: ${result.error.message}).`
+	}
+	const output = result.stderr || result.stdout
+	if (output.length > 0) {
+		return `${result.contextLabel} failed with exit code ${result.code}: ${output}`
+	}
+	return `${result.contextLabel} failed with exit code ${result.code}.`
+}
+
 const runCommandCapture = async (command, args, contextLabel) =>
-	await new Promise((resolve, reject) => {
-		const child = spawn(resolveExecutable(command), args, {
-			cwd: PROJECT_ROOT,
-			stdio: ["ignore", "pipe", "pipe"],
-		})
+	await new Promise((resolve) => {
+		const executable = resolveExecutable(command)
+		let child
+		try {
+			child = spawn(executable, args, {
+				cwd: PROJECT_ROOT,
+				stdio: ["ignore", "pipe", "pipe"],
+				windowsHide: true,
+			})
+		} catch (error) {
+			resolve({
+				ok: false,
+				code: 1,
+				stdout: "",
+				stderr: "",
+				error,
+				contextLabel,
+			})
+			return
+		}
+
+		let settled = false
+		const finish = (result) => {
+			if (settled) {
+				return
+			}
+			settled = true
+			resolve(result)
+		}
 
 		let stdout = ""
 		let stderr = ""
@@ -68,32 +230,91 @@ const runCommandCapture = async (command, args, contextLabel) =>
 			stderr += String(chunk)
 		})
 		child.on("error", (error) => {
-			reject(error)
+			finish({
+				ok: false,
+				code: 1,
+				stdout: stdout.trim(),
+				stderr: stderr.trim(),
+				error,
+				contextLabel,
+			})
 		})
 		child.on("close", (code) => {
-			resolve({
+			finish({
 				ok: code === 0,
 				code: code ?? 1,
 				stdout: stdout.trim(),
 				stderr: stderr.trim(),
+				error: null,
 				contextLabel,
 			})
 		})
 	})
 
+const writeChunk = (stream, chunk) => {
+	if (stream?.writable) {
+		stream.write(chunk)
+	}
+}
+
 const runCommandInteractive = async (command, args, contextLabel) =>
-	await new Promise((resolve, reject) => {
-		const child = spawn(resolveExecutable(command), args, {
-			cwd: PROJECT_ROOT,
-			stdio: "inherit",
+	await new Promise((resolve) => {
+		const executable = resolveExecutable(command)
+		let child
+		try {
+			child = spawn(executable, args, {
+				cwd: PROJECT_ROOT,
+				stdio: ["ignore", "pipe", "pipe"],
+				windowsHide: true,
+			})
+		} catch (error) {
+			resolve({
+				ok: false,
+				code: 1,
+				stdout: "",
+				stderr: "",
+				error,
+				contextLabel,
+			})
+			return
+		}
+
+		let settled = false
+		const finish = (result) => {
+			if (settled) {
+				return
+			}
+			settled = true
+			resolve(result)
+		}
+
+		let stdout = ""
+		let stderr = ""
+		child.stdout.on("data", (chunk) => {
+			stdout += String(chunk)
+			writeChunk(process.stdout, chunk)
+		})
+		child.stderr.on("data", (chunk) => {
+			stderr += String(chunk)
+			writeChunk(process.stderr, chunk)
 		})
 		child.on("error", (error) => {
-			reject(error)
+			finish({
+				ok: false,
+				code: 1,
+				stdout: stdout.trim(),
+				stderr: stderr.trim(),
+				error,
+				contextLabel,
+			})
 		})
 		child.on("close", (code) => {
-			resolve({
+			finish({
 				ok: code === 0,
 				code: code ?? 1,
+				stdout: stdout.trim(),
+				stderr: stderr.trim(),
+				error: null,
 				contextLabel,
 			})
 		})
@@ -138,19 +359,19 @@ const promptYesNo = async (rl, question, options, defaultValue = true) => {
 	if (options.yes) {
 		return true
 	}
-	const suffix = defaultValue ? "[Y/n]" : "[y/N]"
+	const suffix = defaultValue ? "[Enter=yes, n=no]" : "[y=yes, Enter=no]"
 	for (;;) {
 		const answer = (await rl.question(`${question} ${suffix}: `)).trim().toLowerCase()
 		if (answer.length === 0) {
 			return defaultValue
 		}
-		if (answer === "y" || answer === "yes") {
+		if (answer === "y" || answer === "yes" || answer === "j" || answer === "ja" || answer === "z") {
 			return true
 		}
-		if (answer === "n" || answer === "no") {
+		if (answer === "n" || answer === "no" || answer === "nein") {
 			return false
 		}
-		console.log("[installer] Please answer with yes or no.")
+		console.log("[installer] Press Enter for yes or type n for no.")
 	}
 }
 
@@ -188,21 +409,29 @@ const ensureGitIdentity = async (rl, options) => {
 	}
 
 	if (options.yes) {
-		const defaultName = (process.env[DEFAULT_GIT_NAME_ENV] ?? "").trim()
-		const defaultEmail = (process.env[DEFAULT_GIT_EMAIL_ENV] ?? "").trim()
+		const defaultName = options.gitName || (process.env[DEFAULT_GIT_NAME_ENV] ?? "").trim()
+		const defaultEmail = options.gitEmail || (process.env[DEFAULT_GIT_EMAIL_ENV] ?? "").trim()
 		if (defaultName.length === 0 || defaultEmail.length === 0) {
 			throw new Error(
 				`Git name/email are missing. "${DEFAULT_GIT_NAME_ENV}" and "${DEFAULT_GIT_EMAIL_ENV}" must be set when using "--yes".`,
 			)
 		}
 
-		const setName = await runCommandCapture("git", ["config", "--global", "user.name", defaultName], "git config user.name")
+		const setName = await runCommandCapture(
+			"git",
+			["config", "--global", "user.name", defaultName],
+			"git config user.name",
+		)
 		if (!setName.ok) {
-			throw new Error(`Git name could not be set: ${setName.stderr || setName.stdout}`)
+			throw new Error(`Git name could not be set. ${formatCommandFailure(setName)}`)
 		}
-		const setEmail = await runCommandCapture("git", ["config", "--global", "user.email", defaultEmail], "git config user.email")
+		const setEmail = await runCommandCapture(
+			"git",
+			["config", "--global", "user.email", defaultEmail],
+			"git config user.email",
+		)
 		if (!setEmail.ok) {
-			throw new Error(`Git email could not be set: ${setEmail.stderr || setEmail.stdout}`)
+			throw new Error(`Git email could not be set. ${formatCommandFailure(setEmail)}`)
 		}
 		console.log("[installer] Git name and Git email were set from environment values.")
 		return
@@ -216,11 +445,11 @@ const ensureGitIdentity = async (rl, options) => {
 
 	const setName = await runCommandCapture("git", ["config", "--global", "user.name", name], "git config user.name")
 	if (!setName.ok) {
-		throw new Error(`Git name could not be set: ${setName.stderr || setName.stdout}`)
+		throw new Error(`Git name could not be set. ${formatCommandFailure(setName)}`)
 	}
 	const setEmail = await runCommandCapture("git", ["config", "--global", "user.email", email], "git config user.email")
 	if (!setEmail.ok) {
-		throw new Error(`Git email could not be set: ${setEmail.stderr || setEmail.stdout}`)
+		throw new Error(`Git email could not be set. ${formatCommandFailure(setEmail)}`)
 	}
 	console.log("[installer] Git name and Git email were set.")
 }
@@ -243,7 +472,7 @@ const ensureSshKey = async (rl, options) => {
 		await mkdir(path.dirname(SSH_PRIVATE_KEY_PATH), { recursive: true })
 		if (options.yes) {
 			const fallbackEmail = await readGitConfig("user.email")
-			const envComment = (process.env[DEFAULT_SSH_COMMENT_ENV] ?? "").trim()
+			const envComment = options.sshComment || (process.env[DEFAULT_SSH_COMMENT_ENV] ?? "").trim()
 			const keyComment = envComment || fallbackEmail || "you@example.com"
 			const keygenResult = await runCommandInteractive(
 				"ssh-keygen",
@@ -251,7 +480,7 @@ const ensureSshKey = async (rl, options) => {
 				"ssh-keygen",
 			)
 			if (!keygenResult.ok) {
-				throw new Error("SSH key could not be created.")
+				throw new Error(`SSH key could not be created. ${formatCommandFailure(keygenResult)}`)
 			}
 			console.log("[installer] SSH key was created from environment values.")
 		} else {
@@ -268,7 +497,7 @@ const ensureSshKey = async (rl, options) => {
 				"ssh-keygen",
 			)
 			if (!keygenResult.ok) {
-				throw new Error("SSH key could not be created.")
+				throw new Error(`SSH key could not be created. ${formatCommandFailure(keygenResult)}`)
 			}
 		}
 	}
@@ -299,7 +528,7 @@ const runSetupCommands = async (options) => {
 		console.log(formatStep("Install dependencies (npm install)"))
 		const installResult = await runCommandInteractive("npm", ["install"], "npm install")
 		if (!installResult.ok) {
-			throw new Error("npm install failed.")
+			throw new Error(formatCommandFailure(installResult))
 		}
 	} else {
 		console.log("[installer] Dependencies skipped (--skip-dependencies).")
@@ -309,7 +538,7 @@ const runSetupCommands = async (options) => {
 		console.log(formatStep("Repair and validate project structure (npm run repair)"))
 		const repairResult = await runCommandInteractive("npm", ["run", "repair"], "npm run repair")
 		if (!repairResult.ok) {
-			throw new Error("npm run repair failed.")
+			throw new Error(formatCommandFailure(repairResult))
 		}
 	} else {
 		console.log("[installer] Repair skipped (--skip-repair).")
@@ -325,7 +554,7 @@ const printFinalSummary = () => {
 }
 
 const main = async () => {
-	const options = parseOptions(process.argv.slice(2))
+	const options = await parseOptions(process.argv.slice(2))
 	const rl = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout,

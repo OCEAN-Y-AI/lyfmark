@@ -75,6 +75,7 @@ Installer-Integration:
 Das Windows-Bootstrap-Skript:
 
 - fragt den Projekt-/Webseitennamen ab und verwendet ihn als Zielordner
+- kann Daten direkt per Parameter oder gesammelt per Install-Info-JSON erhalten
 - installiert/prüft Git, Node.js/npm, `ssh-keygen` und Visual Studio Code
 - lädt das LyfMark-Projekt aus GitHub
 - startet danach den Projekt-Wizard
@@ -95,6 +96,30 @@ Manueller Windows-VM-Test des aktuellen GitHub-Skripts:
   - `powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri https://raw.githubusercontent.com/OCEAN-Y-AI/lyfmark/main/installer/windows/install.ps1 -OutFile $env:TEMP\lyfmark-install.ps1"`
 - Skript ausführen:
   - `powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\lyfmark-install.ps1`
+
+Beispiel mit direkter Parameterübergabe:
+
+- `powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\lyfmark-install.ps1 -ProjectName "Example Website" -Yes -GitName "Jane Doe" -GitEmail "jane@example.com" -SshComment "jane@example.com"`
+
+Beispiel mit Install-Info-Datei für spätere GUI-Wrapper:
+
+```json
+{
+  "projectName": "Example Website",
+  "gitName": "Jane Doe",
+  "gitEmail": "jane@example.com",
+  "sshComment": "jane@example.com",
+  "yes": true
+}
+```
+
+- Ausführen:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\lyfmark-install.ps1 -InstallInfoPath C:\Path\install-info.json`
+
+Hinweise:
+
+- Ja/Nein-Abfragen können mit Enter bestätigt werden; dadurch ist kein `y` auf eventuell falsch gemappten Tastaturen nötig.
+- Der erhöhte Administrator-Prozess installiert nur fehlende Systemprogramme und beendet sich danach automatisch. Das eigentliche Projekt-Setup läuft anschließend im normalen Nutzerkontext weiter.
 
 ## Installer-Tests (für CI und manuelle VM-Prüfung)
 

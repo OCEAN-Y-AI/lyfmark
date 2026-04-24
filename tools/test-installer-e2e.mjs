@@ -120,7 +120,7 @@ const ensureMockSshKeygenIfMissing = async (env, homeDirectory) => {
 				"goto next",
 				":done",
 				'if "%KEY_PATH%"=="" exit /b 1',
-				'powershell -NoProfile -Command "$key=[Environment]::GetEnvironmentVariable(\'KEY_PATH\'); New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($key)) | Out-Null; Set-Content -Path $key -Value \'MOCK-PRIVATE-KEY\'; Set-Content -Path ($key + \'.pub\') -Value (\'ssh-ed25519 \' + [Environment]::GetEnvironmentVariable(\'COMMENT\'))"',
+				"powershell -NoProfile -Command \"$key=[Environment]::GetEnvironmentVariable('KEY_PATH'); New-Item -ItemType Directory -Force -Path ([System.IO.Path]::GetDirectoryName($key)) | Out-Null; Set-Content -Path $key -Value 'MOCK-PRIVATE-KEY'; Set-Content -Path ($key + '.pub') -Value ('ssh-ed25519 ' + [Environment]::GetEnvironmentVariable('COMMENT'))\"",
 				"exit /b 0",
 				"",
 			].join("\r\n"),
@@ -140,13 +140,13 @@ const ensureMockSshKeygenIfMissing = async (env, homeDirectory) => {
 				'KEY_PATH=\"\"',
 				'COMMENT=\"mock@example.com\"',
 				"while [[ $# -gt 0 ]]; do",
-				"\tcase \"$1\" in",
+				'\tcase "$1" in',
 				"\t\t-f)",
-				"\t\t\tKEY_PATH=\"$2\"",
+				'\t\t\tKEY_PATH="$2"',
 				"\t\t\tshift 2",
 				"\t\t\t;;",
 				"\t\t-C)",
-				"\t\t\tCOMMENT=\"$2\"",
+				'\t\t\tCOMMENT="$2"',
 				"\t\t\tshift 2",
 				"\t\t\t;;",
 				"\t\t*)",
@@ -157,9 +157,9 @@ const ensureMockSshKeygenIfMissing = async (env, homeDirectory) => {
 				'if [[ -z \"${KEY_PATH}\" ]]; then',
 				"\texit 1",
 				"fi",
-				"mkdir -p \"$(dirname \"${KEY_PATH}\")\"",
+				'mkdir -p "$(dirname "${KEY_PATH}")"',
 				"printf 'MOCK-PRIVATE-KEY\\n' > \"${KEY_PATH}\"",
-				"printf 'ssh-ed25519 %s\\n' \"${COMMENT}\" > \"${KEY_PATH}.pub\"",
+				'printf \'ssh-ed25519 %s\\n\' "${COMMENT}" > "${KEY_PATH}.pub"',
 				"",
 			].join("\n"),
 			"utf8",
@@ -211,7 +211,9 @@ const verifyOutcome = async ({
 	await assertExists(path.join(homeDirectory, ".ssh", "id_ed25519"), "SSH private key")
 	await assertExists(path.join(homeDirectory, ".ssh", "id_ed25519.pub"), "SSH public key")
 
-	const gitName = await runProcess("git", ["config", "--global", "user.name"], { env })
+	const gitName = await runProcess("git", ["config", "--global", "user.name"], {
+		env,
+	})
 	const gitEmail = await runProcess("git", ["config", "--global", "user.email"], { env })
 	assert.equal(gitName.code, 0, `git user.name could not be read: ${gitName.stderr}`)
 	assert.equal(gitEmail.code, 0, `git user.email could not be read: ${gitEmail.stderr}`)
@@ -240,12 +242,24 @@ const runAutoMode = async (homeDirectory, env, mockUrlLogPath) => {
 	const expectedName = "Installer E2E User"
 	const expectedEmail = "installer-e2e@example.com"
 	const wrapperInvocation = selectWrapperInvocation()
-	const wrapperArgs = wrapperInvocation.buildArgs(["--yes"])
+	const installInfoPath = path.join(homeDirectory, "lyfmark-install-info.json")
+	await writeFile(
+		installInfoPath,
+		JSON.stringify(
+			{
+				yes: true,
+				gitName: expectedName,
+				gitEmail: expectedEmail,
+				sshComment: expectedEmail,
+			},
+			null,
+			2,
+		),
+		"utf8",
+	)
+	const wrapperArgs = wrapperInvocation.buildArgs([`--install-info=${installInfoPath}`])
 	const testEnv = {
 		...env,
-		LYFMARK_INSTALLER_DEFAULT_GIT_NAME: expectedName,
-		LYFMARK_INSTALLER_DEFAULT_GIT_EMAIL: expectedEmail,
-		LYFMARK_INSTALLER_DEFAULT_SSH_COMMENT: expectedEmail,
 	}
 
 	const result = await runProcess(wrapperInvocation.command, wrapperArgs, {
