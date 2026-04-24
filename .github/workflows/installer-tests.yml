@@ -5,7 +5,9 @@ on:
   pull_request:
     paths:
       - "installer/**"
+      - ".vscode/tasks.json"
       - "tools/installer/**"
+      - "tools/lyfmark-vscode/install-local-extension.mjs"
       - "tools/repair.mjs"
       - "tools/test-installer.mjs"
       - "tools/test-installer-e2e.mjs"
@@ -17,7 +19,9 @@ on:
       - main
     paths:
       - "installer/**"
+      - ".vscode/tasks.json"
       - "tools/installer/**"
+      - "tools/lyfmark-vscode/install-local-extension.mjs"
       - "tools/repair.mjs"
       - "tools/test-installer.mjs"
       - "tools/test-installer-e2e.mjs"
@@ -110,6 +114,7 @@ jobs:
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\installer\windows\install.ps1" `
             -RepositoryUrl $PWD.Path `
             -InstallDirectory $installRoot `
+            -ProjectName "CI Test Site" `
             -Yes `
             -GitName "Installer CI User" `
             -GitEmail "installer-ci@example.com" `
@@ -119,7 +124,7 @@ jobs:
             -SkipOpenWorkspace `
             -NoPause
 
-          $projectRoot = Join-Path $installRoot "lyfmark"
+          $projectRoot = Join-Path $installRoot "CI Test Site"
           if (-not (Test-Path (Join-Path $projectRoot "package.json"))) {
             throw "Installed project package.json missing."
           }

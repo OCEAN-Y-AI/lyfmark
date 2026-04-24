@@ -19,19 +19,22 @@ Der Erststart muss ohne manuelle Terminal-Bedienung möglich sein: Doppelklick a
 ## Ablauf (verbindlich)
 
 1. Das Kundenartefakt lädt die aktuelle Version von `installer/windows/install.ps1` aus GitHub/Server und führt sie aus.
-2. Das Bootstrap-Skript prüft/installiert Systemprogramme:
+2. Das Bootstrap-Skript fragt den Projekt-/Webseitennamen ab und verwendet ihn als Zielverzeichnis unter dem Installationsordner.
+3. Das Bootstrap-Skript prüft/installiert Systemprogramme:
 	- `node`
 	- `npm`
 	- `git`
 	- `ssh-keygen`
 	- Visual Studio Code
-3. Das Bootstrap-Skript lädt das LyfMark-Projekt in den lokalen Zielordner.
-4. Der projektinterne Wizard prüft/setzt Git-Identität (`git config --global user.name/user.email`).
-5. Der Wizard prüft/erzeugt den SSH-Key (`~/.ssh/id_ed25519`) und öffnet die GitHub-Key-Seite.
-6. Der Wizard installiert Projektabhängigkeiten (`npm install`).
-7. Der Wizard finalisiert die Struktur (`npm run repair`).
-8. Das Bootstrap-Skript öffnet die Customer-Workspace in Visual Studio Code.
-9. Abschluss mit klaren nächsten Schritten.
+4. Das Bootstrap-Skript lädt das LyfMark-Projekt in den lokalen Zielordner.
+5. Der projektinterne Wizard prüft/setzt Git-Identität (`git config --global user.name/user.email`).
+6. Der Wizard prüft/erzeugt den SSH-Key (`~/.ssh/id_ed25519`) und öffnet die GitHub-Key-Seite.
+7. Der Wizard installiert Projektabhängigkeiten (`npm install`).
+8. Der Wizard finalisiert die Struktur (`npm run repair`).
+9. Das Bootstrap-Skript installiert die LyfMark-VS-Code-Extension einmalig über `tools/lyfmark-vscode/install-local-extension.mjs`.
+10. Das Bootstrap-Skript erstellt einen Desktop-Link auf die Customer-Workspace.
+11. Das Bootstrap-Skript öffnet die Customer-Workspace in Visual Studio Code.
+12. Abschluss mit klaren nächsten Schritten.
 
 ## Fehlerverhalten (DbC)
 
@@ -53,6 +56,7 @@ Windows-Bootstrap (`installer/windows/install.ps1`):
 
 - `-RepositoryUrl <url>`
 - `-InstallDirectory <pfad>`
+- `-ProjectName <name>`
 - `-Yes`
 - `-GitName <name>`
 - `-GitEmail <email>`
@@ -104,6 +108,12 @@ CI-Contract:
 	- Wrapper-Smoke-Test je Plattform mit Argument-Weitergabe
 	- vollständiger E2E-Installlauf je Plattform (`ubuntu-latest`, `macos-latest`, `windows-latest`) mit Wizard + Wrapper + `npm install` + `npm run repair`
 	- Windows-Bootstrap-Skript als echten Einstiegspunkt (`installer/windows/install.ps1`) gegen ein frisches Zielverzeichnis
+
+## VS-Code-Extension-Installation
+
+- Die Extension wird vom Installer vor dem ersten Öffnen von VS Code installiert.
+- `.vscode/tasks.json` darf keinen `runOn: folderOpen`-Task für die Extension-Installation enthalten.
+- Grund: Ein Folder-Open-Task, der `code --install-extension` startet, kann beim Öffnen der Customer-Workspace wieder neue VS-Code-Fenster auslösen und damit eine Startschleife erzeugen.
 
 ## E2E-Modi (Manual + Auto)
 

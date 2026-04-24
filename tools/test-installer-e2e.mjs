@@ -196,7 +196,7 @@ const assertExists = async (targetPath, label) => {
 	try {
 		await access(targetPath, constants.F_OK)
 	} catch {
-		throw new Error(`${label} fehlt: ${targetPath}`)
+		throw new Error(`${label} is missing: ${targetPath}`)
 	}
 }
 
@@ -213,21 +213,21 @@ const verifyOutcome = async ({
 
 	const gitName = await runProcess("git", ["config", "--global", "user.name"], { env })
 	const gitEmail = await runProcess("git", ["config", "--global", "user.email"], { env })
-	assert.equal(gitName.code, 0, `git user.name konnte nicht gelesen werden: ${gitName.stderr}`)
-	assert.equal(gitEmail.code, 0, `git user.email konnte nicht gelesen werden: ${gitEmail.stderr}`)
+	assert.equal(gitName.code, 0, `git user.name could not be read: ${gitName.stderr}`)
+	assert.equal(gitEmail.code, 0, `git user.email could not be read: ${gitEmail.stderr}`)
 
 	const actualName = gitName.stdout.trim()
 	const actualEmail = gitEmail.stdout.trim()
 
 	if (typeof expectedName === "string") {
-		assert.equal(actualName, expectedName, "Unerwarteter git user.name")
+		assert.equal(actualName, expectedName, "Unexpected git user.name")
 	} else {
-		assert.notEqual(actualName.length, 0, "git user.name ist leer")
+		assert.notEqual(actualName.length, 0, "git user.name is empty")
 	}
 	if (typeof expectedEmail === "string") {
-		assert.equal(actualEmail, expectedEmail, "Unerwarteter git user.email")
+		assert.equal(actualEmail, expectedEmail, "Unexpected git user.email")
 	} else {
-		assert.notEqual(actualEmail.length, 0, "git user.email ist leer")
+		assert.notEqual(actualEmail.length, 0, "git user.email is empty")
 	}
 
 	if (requireGithubMockLog) {
@@ -254,7 +254,7 @@ const runAutoMode = async (homeDirectory, env, mockUrlLogPath) => {
 	const mergedOutput = `${result.stdout}\n${result.stderr}`
 	assert.equal(result.code, 0, mergedOutput)
 	assert.match(mergedOutput, /\[repair\] Health summary:/u)
-	assert.match(mergedOutput, /\[installer\] Installation abgeschlossen\./u)
+	assert.match(mergedOutput, /\[installer\] Installation finished\./u)
 
 	await verifyOutcome({
 		homeDirectory,
@@ -275,7 +275,7 @@ const runManualMode = async (homeDirectory, env, mockGithub) => {
 	console.log("[installer-e2e] Manual mode started.")
 	console.log(`[installer-e2e] Temporary HOME: ${homeDirectory}`)
 	if (mockGithub) {
-		console.log("[installer-e2e] GitHub URL opening is mocked. Please answer 'j' for URL opening prompt.")
+		console.log("[installer-e2e] GitHub URL opening is mocked. Press Enter or answer 'y' for the URL opening prompt.")
 	}
 	console.log("[installer-e2e] Please complete installer prompts manually now.")
 

@@ -6,15 +6,15 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "${PROJECT_ROOT}"
 
 if [[ ! -f "package.json" ]]; then
-	echo "[installer] Fehler: package.json wurde nicht gefunden."
-	echo "[installer] Bitte den Installer aus dem LyfMark-Projektordner starten."
+	echo "[installer] Error: package.json was not found."
+	echo "[installer] Start this installer from the LyfMark project folder."
 	exit 1
 fi
 
 if ! command -v node >/dev/null 2>&1; then
-	echo "[installer] Node.js wurde nicht gefunden."
+	echo "[installer] Node.js was not found."
 	echo "[installer] Download: https://nodejs.org/en/download"
-	echo "[installer] Installiere Node.js und starte den Installer danach erneut."
+	echo "[installer] Install Node.js and start the installer again."
 	exit 1
 fi
 

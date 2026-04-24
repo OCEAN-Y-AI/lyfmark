@@ -74,12 +74,15 @@ Installer-Integration:
 
 Das Windows-Bootstrap-Skript:
 
+- fragt den Projekt-/Webseitennamen ab und verwendet ihn als Zielordner
 - installiert/prüft Git, Node.js/npm, `ssh-keygen` und Visual Studio Code
 - lädt das LyfMark-Projekt aus GitHub
 - startet danach den Projekt-Wizard
+- installiert die LyfMark-VS-Code-Extension einmalig
+- erstellt einen Desktop-Link auf die Customer-Workspace
 - öffnet am Ende die Customer-Workspace in Visual Studio Code
 
-Der Projekt-Wizard prüft/geführt:
+Der Projekt-Wizard führt:
 
 - Pflicht-Tools (`node`, `npm`, `git`, `ssh-keygen`)
 - Git-Identität (`user.name`, `user.email`)

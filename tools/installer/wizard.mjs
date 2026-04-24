@@ -16,6 +16,13 @@ const DEFAULT_SSH_COMMENT_ENV = "LYFMARK_INSTALLER_DEFAULT_SSH_COMMENT"
 
 const OPTION_DEFINITIONS = new Set(["--yes", "--skip-git-identity", "--skip-ssh", "--skip-dependencies", "--skip-repair"])
 
+const resolveExecutable = (command) => {
+	if (process.platform === "win32" && command === "npm") {
+		return "npm.cmd"
+	}
+	return command
+}
+
 const parseOptions = (argv) => {
 	const options = {
 		yes: false,
@@ -47,7 +54,7 @@ const parseOptions = (argv) => {
 
 const runCommandCapture = async (command, args, contextLabel) =>
 	await new Promise((resolve, reject) => {
-		const child = spawn(command, args, {
+		const child = spawn(resolveExecutable(command), args, {
 			cwd: PROJECT_ROOT,
 			stdio: ["ignore", "pipe", "pipe"],
 		})
@@ -76,7 +83,7 @@ const runCommandCapture = async (command, args, contextLabel) =>
 
 const runCommandInteractive = async (command, args, contextLabel) =>
 	await new Promise((resolve, reject) => {
-		const child = spawn(command, args, {
+		const child = spawn(resolveExecutable(command), args, {
 			cwd: PROJECT_ROOT,
 			stdio: "inherit",
 		})
@@ -103,14 +110,14 @@ const commandExists = async (command) => {
 
 const openUrl = async (url) => {
 	if (process.env.LYFMARK_INSTALLER_SKIP_OPEN_URLS === "1") {
-		console.log(`[installer] URL-Öffnung übersprungen: ${url}`)
+		console.log(`[installer] URL opening skipped: ${url}`)
 		return
 	}
 
 	const mockUrlLogPath = process.env.LYFMARK_INSTALLER_MOCK_OPEN_URL_LOG
 	if (typeof mockUrlLogPath === "string" && mockUrlLogPath.trim().length > 0) {
 		await appendFile(mockUrlLogPath, `${url}\n`, "utf8")
-		console.log(`[installer] (mock) URL geöffnet: ${url}`)
+		console.log(`[installer] (mock) URL opened: ${url}`)
 		return
 	}
 
@@ -127,35 +134,39 @@ const openUrl = async (url) => {
 
 const formatStep = (label) => `\n[installer] ${label}`
 
-const promptYesNo = async (rl, question, options) => {
+const promptYesNo = async (rl, question, options, defaultValue = true) => {
 	if (options.yes) {
 		return true
 	}
+	const suffix = defaultValue ? "[Y/n]" : "[y/N]"
 	for (;;) {
-		const answer = (await rl.question(`${question} (j/n): `)).trim().toLowerCase()
-		if (answer === "j" || answer === "ja" || answer === "y" || answer === "yes") {
+		const answer = (await rl.question(`${question} ${suffix}: `)).trim().toLowerCase()
+		if (answer.length === 0) {
+			return defaultValue
+		}
+		if (answer === "y" || answer === "yes") {
 			return true
 		}
-		if (answer === "n" || answer === "nein" || answer === "no") {
+		if (answer === "n" || answer === "no") {
 			return false
 		}
-		console.log("[installer] Bitte antworte mit j oder n.")
+		console.log("[installer] Please answer with yes or no.")
 	}
 }
 
 const ensureRequiredCommand = async (rl, options, commandName, downloadUrl) => {
 	if (await commandExists(commandName)) {
-		console.log(`[installer] ${commandName} ist verfügbar.`)
+		console.log(`[installer] ${commandName} is available.`)
 		return
 	}
 
-	console.log(`[installer] ${commandName} wurde nicht gefunden.`)
+	console.log(`[installer] ${commandName} was not found.`)
 	console.log(`[installer] Download: ${downloadUrl}`)
-	const shouldOpen = await promptYesNo(rl, "Soll die Download-Seite im Browser geöffnet werden?", options)
+	const shouldOpen = await promptYesNo(rl, "Open the download page in the browser?", options)
 	if (shouldOpen) {
 		await openUrl(downloadUrl)
 	}
-	throw new Error(`${commandName} fehlt. Bitte installieren und den Installer erneut starten.`)
+	throw new Error(`${commandName} is missing. Install it and start the installer again.`)
 }
 
 const readGitConfig = async (key) => {
@@ -167,12 +178,12 @@ const readGitConfig = async (key) => {
 }
 
 const ensureGitIdentity = async (rl, options) => {
-	console.log(formatStep("Git-Konto prüfen"))
+	console.log(formatStep("Check Git identity"))
 	const existingName = await readGitConfig("user.name")
 	const existingEmail = await readGitConfig("user.email")
 	if (existingName.length > 0 && existingEmail.length > 0) {
-		console.log(`[installer] Git-Name: ${existingName}`)
-		console.log(`[installer] Git-E-Mail: ${existingEmail}`)
+		console.log(`[installer] Git name: ${existingName}`)
+		console.log(`[installer] Git email: ${existingEmail}`)
 		return
 	}
 
@@ -181,37 +192,37 @@ const ensureGitIdentity = async (rl, options) => {
 		const defaultEmail = (process.env[DEFAULT_GIT_EMAIL_ENV] ?? "").trim()
 		if (defaultName.length === 0 || defaultEmail.length === 0) {
 			throw new Error(
-				`Git-Name/E-Mail fehlen. Für "--yes" müssen ${DEFAULT_GIT_NAME_ENV} und ${DEFAULT_GIT_EMAIL_ENV} gesetzt sein.`,
+				`Git name/email are missing. "${DEFAULT_GIT_NAME_ENV}" and "${DEFAULT_GIT_EMAIL_ENV}" must be set when using "--yes".`,
 			)
 		}
 
 		const setName = await runCommandCapture("git", ["config", "--global", "user.name", defaultName], "git config user.name")
 		if (!setName.ok) {
-			throw new Error(`Git-Name konnte nicht gesetzt werden: ${setName.stderr || setName.stdout}`)
+			throw new Error(`Git name could not be set: ${setName.stderr || setName.stdout}`)
 		}
 		const setEmail = await runCommandCapture("git", ["config", "--global", "user.email", defaultEmail], "git config user.email")
 		if (!setEmail.ok) {
-			throw new Error(`Git-E-Mail konnte nicht gesetzt werden: ${setEmail.stderr || setEmail.stdout}`)
+			throw new Error(`Git email could not be set: ${setEmail.stderr || setEmail.stdout}`)
 		}
-		console.log("[installer] Git-Name und Git-E-Mail wurden aus Umgebungswerten gesetzt.")
+		console.log("[installer] Git name and Git email were set from environment values.")
 		return
 	}
 
-	const name = (await rl.question("Bitte Git-Namen eingeben (z. B. Max Mustermann): ")).trim()
-	const email = (await rl.question("Bitte Git-E-Mail eingeben: ")).trim()
+	const name = (await rl.question("Enter Git name (for example Jane Doe): ")).trim()
+	const email = (await rl.question("Enter Git email: ")).trim()
 	if (name.length === 0 || email.length === 0) {
-		throw new Error("Git-Name und Git-E-Mail dürfen nicht leer sein.")
+		throw new Error("Git name and Git email must not be empty.")
 	}
 
 	const setName = await runCommandCapture("git", ["config", "--global", "user.name", name], "git config user.name")
 	if (!setName.ok) {
-		throw new Error(`Git-Name konnte nicht gesetzt werden: ${setName.stderr || setName.stdout}`)
+		throw new Error(`Git name could not be set: ${setName.stderr || setName.stdout}`)
 	}
 	const setEmail = await runCommandCapture("git", ["config", "--global", "user.email", email], "git config user.email")
 	if (!setEmail.ok) {
-		throw new Error(`Git-E-Mail konnte nicht gesetzt werden: ${setEmail.stderr || setEmail.stdout}`)
+		throw new Error(`Git email could not be set: ${setEmail.stderr || setEmail.stdout}`)
 	}
-	console.log("[installer] Git-Name und Git-E-Mail wurden gesetzt.")
+	console.log("[installer] Git name and Git email were set.")
 }
 
 const fileExists = async (filePath) => {
@@ -224,10 +235,10 @@ const fileExists = async (filePath) => {
 }
 
 const ensureSshKey = async (rl, options) => {
-	console.log(formatStep("SSH-Schlüssel prüfen"))
+	console.log(formatStep("Check SSH key"))
 	const hasPublicKey = await fileExists(SSH_PUBLIC_KEY_PATH)
 	if (hasPublicKey) {
-		console.log(`[installer] SSH-Schlüssel gefunden: ${SSH_PUBLIC_KEY_PATH}`)
+		console.log(`[installer] SSH key found: ${SSH_PUBLIC_KEY_PATH}`)
 	} else {
 		await mkdir(path.dirname(SSH_PRIVATE_KEY_PATH), { recursive: true })
 		if (options.yes) {
@@ -240,16 +251,16 @@ const ensureSshKey = async (rl, options) => {
 				"ssh-keygen",
 			)
 			if (!keygenResult.ok) {
-				throw new Error("SSH-Schlüssel konnte nicht erzeugt werden.")
+				throw new Error("SSH key could not be created.")
 			}
-			console.log("[installer] SSH-Schlüssel wurde aus Umgebungswerten erzeugt.")
+			console.log("[installer] SSH key was created from environment values.")
 		} else {
-			const createKey = await promptYesNo(rl, "Es wurde kein SSH-Schlüssel gefunden. Jetzt erstellen?", options)
+			const createKey = await promptYesNo(rl, "No SSH key was found. Create one now?", options)
 			if (!createKey) {
-				throw new Error("Installation abgebrochen: SSH-Schlüssel ist für GitHub-Uploads erforderlich.")
+				throw new Error("Installation cancelled: an SSH key is required for GitHub uploads.")
 			}
 			const fallbackEmail = await readGitConfig("user.email")
-			const comment = (await rl.question(`Kommentar für den SSH-Key [${fallbackEmail || "you@example.com"}]: `)).trim()
+			const comment = (await rl.question(`SSH key comment [${fallbackEmail || "you@example.com"}]: `)).trim()
 			const keyComment = comment.length > 0 ? comment : fallbackEmail || "you@example.com"
 			const keygenResult = await runCommandInteractive(
 				"ssh-keygen",
@@ -257,19 +268,19 @@ const ensureSshKey = async (rl, options) => {
 				"ssh-keygen",
 			)
 			if (!keygenResult.ok) {
-				throw new Error("SSH-Schlüssel konnte nicht erzeugt werden.")
+				throw new Error("SSH key could not be created.")
 			}
 		}
 	}
 
 	const publicKey = (await readFile(SSH_PUBLIC_KEY_PATH, "utf8")).trim()
-	console.log("[installer] Bitte den folgenden Public Key in GitHub eintragen:")
+	console.log("[installer] Add this public key to GitHub:")
 	console.log("----------------------------------------------------------------")
 	console.log(publicKey)
 	console.log("----------------------------------------------------------------")
 	console.log(`[installer] GitHub SSH Keys: ${GITHUB_SSH_SETTINGS_URL}`)
 
-	const openGithub = await promptYesNo(rl, "Soll die GitHub-SSH-Seite jetzt geöffnet werden?", options)
+	const openGithub = await promptYesNo(rl, "Open the GitHub SSH page now?", options)
 	if (openGithub) {
 		await openUrl(GITHUB_SSH_SETTINGS_URL)
 	}
@@ -279,38 +290,38 @@ const ensureProjectRoot = async () => {
 	const packageJsonPath = path.join(PROJECT_ROOT, "package.json")
 	const hasPackageJson = await fileExists(packageJsonPath)
 	if (!hasPackageJson) {
-		throw new Error('Installer muss im Projekt-Root ausgeführt werden (package.json fehlt im aktuellen Ordner).')
+		throw new Error("Installer must run in the project root. package.json is missing in the current folder.")
 	}
 }
 
 const runSetupCommands = async (options) => {
 	if (!options.skipDependencies) {
-		console.log(formatStep("Abhängigkeiten installieren (npm install)"))
+		console.log(formatStep("Install dependencies (npm install)"))
 		const installResult = await runCommandInteractive("npm", ["install"], "npm install")
 		if (!installResult.ok) {
-			throw new Error("npm install ist fehlgeschlagen.")
+			throw new Error("npm install failed.")
 		}
 	} else {
-		console.log("[installer] Abhängigkeiten übersprungen (--skip-dependencies).")
+		console.log("[installer] Dependencies skipped (--skip-dependencies).")
 	}
 
 	if (!options.skipRepair) {
-		console.log(formatStep("Projektstruktur reparieren/validieren (npm run repair)"))
+		console.log(formatStep("Repair and validate project structure (npm run repair)"))
 		const repairResult = await runCommandInteractive("npm", ["run", "repair"], "npm run repair")
 		if (!repairResult.ok) {
-			throw new Error("npm run repair ist fehlgeschlagen.")
+			throw new Error("npm run repair failed.")
 		}
 	} else {
-		console.log("[installer] Repair übersprungen (--skip-repair).")
+		console.log("[installer] Repair skipped (--skip-repair).")
 	}
 }
 
 const printFinalSummary = () => {
-	console.log("\n[installer] Installation abgeschlossen.")
-	console.log("[installer] Nächste Schritte:")
-	console.log("- Projekt in VS Code öffnen (Kundensicht: .vscode/lyfmark.customer.code-workspace).")
-	console.log("- Entwicklungsserver starten: npm run dev")
-	console.log("- Inhalte unter pages/, navigation/, content-blocks/ und forms/ bearbeiten.")
+	console.log("\n[installer] Installation finished.")
+	console.log("[installer] Next steps:")
+	console.log("- Open the project in VS Code (customer workspace: .vscode/lyfmark.customer.code-workspace).")
+	console.log("- Start the development server: npm run dev")
+	console.log("- Edit content in pages/, navigation/, content-blocks/, and forms/.")
 }
 
 const main = async () => {
@@ -321,29 +332,29 @@ const main = async () => {
 	})
 
 	try {
-		console.log("[installer] LyfMark Installer gestartet.")
+		console.log("[installer] LyfMark installer started.")
 		await ensureProjectRoot()
 
-		console.log(formatStep("Pflicht-Tools prüfen"))
+		console.log(formatStep("Check required tools"))
 		await ensureRequiredCommand(rl, options, "node", NODE_DOWNLOAD_URL)
 		await ensureRequiredCommand(rl, options, "npm", NODE_DOWNLOAD_URL)
 		await ensureRequiredCommand(rl, options, "git", GIT_DOWNLOAD_URL)
 		if (!options.skipSsh) {
 			await ensureRequiredCommand(rl, options, "ssh-keygen", GIT_DOWNLOAD_URL)
 		} else {
-			console.log("[installer] ssh-keygen-Prüfung übersprungen (--skip-ssh).")
+			console.log("[installer] ssh-keygen check skipped (--skip-ssh).")
 		}
 
 		if (!options.skipGitIdentity) {
 			await ensureGitIdentity(rl, options)
 		} else {
-			console.log("[installer] Git-Identität übersprungen (--skip-git-identity).")
+			console.log("[installer] Git identity skipped (--skip-git-identity).")
 		}
 
 		if (!options.skipSsh) {
 			await ensureSshKey(rl, options)
 		} else {
-			console.log("[installer] SSH-Setup übersprungen (--skip-ssh).")
+			console.log("[installer] SSH setup skipped (--skip-ssh).")
 		}
 
 		await runSetupCommands(options)
@@ -355,6 +366,6 @@ const main = async () => {
 
 main().catch((error) => {
 	const message = error instanceof Error ? error.message : String(error)
-	console.error(`\n[installer] Fehler: ${message}`)
+	console.error(`\n[installer] Error: ${message}`)
 	process.exitCode = 1
 })

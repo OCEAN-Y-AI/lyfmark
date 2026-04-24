@@ -1,5 +1,13 @@
 # Changelog
 
+Stand: 24.04.2026
+
+## Verbesserungen bei Installation
+
+- Der Installer fragt jetzt den Namen der Website ab und legt den Projektordner entsprechend an. Dadurch ist das Projekt nach der Installation leichter wiederzufinden.
+- Am Ende der Installation wird die vorbereitete VS-Code-Kundenansicht automatisch geöffnet und zusätzlich als Desktop-Link angelegt.
+- Die LyfMark-VS-Code-Erweiterung wird vor dem ersten Öffnen einmalig eingerichtet. Dadurch startet VS Code stabil ohne wiederholt neue Fenster zu öffnen.
+
 Stand: 22.04.2026
 
 ## Verbesserungen bei Stabilität und Reparatur

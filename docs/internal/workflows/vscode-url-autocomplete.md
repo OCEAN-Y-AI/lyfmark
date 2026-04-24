@@ -66,8 +66,9 @@ Beispiel (manuell):
 
 ## Automatische Projekt-Installation
 
-- Beim Öffnen des Projekts startet `.vscode/tasks.json` automatisch den Task `Install LyfMark VS Code Extension`.
-- Der Task ruft `tools/lyfmark-vscode/install-local-extension.mjs` auf.
+- Die Extension-Installation läuft über den Installer oder einen expliziten Repair-/Support-Schritt, nicht über einen Folder-Open-Task.
+- Der Installer ruft `tools/lyfmark-vscode/install-local-extension.mjs` einmalig vor dem ersten Öffnen der Customer-Workspace auf.
+- `.vscode/tasks.json` darf keinen `runOn: folderOpen`-Task für die Extension-Installation enthalten, weil ein solcher Task beim Öffnen der Workspace wieder `code` starten und Fenster-Schleifen erzeugen kann.
 - Das Script prüft zuerst, ob die lokale `.vsix` gegenüber den Quellen (`extension.cjs`, `rules.cjs`, `package.json`, ...) veraltet ist; bei Bedarf wird sie automatisch neu gebaut.
 - Danach installiert/aktualisiert das Script die Extension, wenn die VS Code CLI (`code`) verfügbar ist.
 - In WSL wird die Installation gezielt gegen das Remote-Target (`--remote wsl+<Distro>`) ausgeführt.
@@ -86,8 +87,8 @@ Ziel: Updates für Redakteure ohne manuelle VSIX-Schritte.
    - in `tools/lyfmark-vscode`: `npx @vscode/vsce package`.
 3. VSIX mitliefern:
    - neue Datei `lyfmark-vscode-<version>.vsix` im Template belassen.
-4. Automatische Installation beim Öffnen:
-   - vorhandener Task (`Install LyfMark VS Code Extension`) und `install-local-extension.mjs` bauen bei Bedarf die VSIX neu und installieren diese.
+4. Automatische Installation über Installer/Support:
+   - `install-local-extension.mjs` baut bei Bedarf die VSIX neu und installiert diese.
    - installierter Stand wird über `publisher.name@version` plus VSIX-Signatur geprüft; bei geändertem Inhalt wird auch bei gleicher Versionsnummer aktualisiert.
    - in WSL wird explizit auf dem Remote-Target (`--remote wsl+<Distro>`) installiert.
 5. Fallback für gesperrte Umgebungen:
@@ -95,4 +96,4 @@ Ziel: Updates für Redakteure ohne manuelle VSIX-Schritte.
 
 Empfehlung für Release-Pakete:
 - Pro Kunden-Release genau eine neue VSIX-Version beilegen.
-- Task in `.vscode/tasks.json` aktiv lassen, damit Updates beim ersten Projektstart automatisch gezogen werden.
+- Updates über Installer/Repair-Flow ausrollen; `.vscode/tasks.json` bleibt frei von Folder-Open-Installationsaufgaben.

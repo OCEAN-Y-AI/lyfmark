@@ -20,6 +20,13 @@ const extensionRef = `${extensionId}@${extensionVersion}`
 const extensionSourceFiles = ["extension.cjs", "lucide-icons.cjs", "rules.cjs", "package.json", "README.md", ".vscodeignore"]
 const localNpmCachePath = join(repositoryRoot, ".npm-cache")
 
+const resolveExecutable = (command) => {
+	if (process.platform === "win32" && (command === "npx" || command === "code" || command === "code-insiders")) {
+		return `${command}.cmd`
+	}
+	return command
+}
+
 const readMarker = () => {
 	if (!existsSync(markerPath)) {
 		return {
@@ -64,7 +71,7 @@ const isVsixStale = () => {
 }
 
 const buildVsix = () => {
-	const buildResult = spawnSync("npx", ["@vscode/vsce", "package"], {
+	const buildResult = spawnSync(resolveExecutable("npx"), ["@vscode/vsce", "package"], {
 		cwd: scriptDirectory,
 		encoding: "utf8",
 		env: {
@@ -76,7 +83,7 @@ const buildVsix = () => {
 		return true
 	}
 	console.log(
-		`[LyfMark VS Code] VSIX-Build fehlgeschlagen. Bitte manuell ausfuehren: (cd tools/lyfmark-vscode && npx @vscode/vsce package)`,
+		"[LyfMark VS Code] VSIX build failed. Run manually: (cd tools/lyfmark-vscode && npx @vscode/vsce package)",
 	)
 	if (buildResult.stderr.trim().length > 0) {
 		console.log(buildResult.stderr.trim())
@@ -87,9 +94,9 @@ const buildVsix = () => {
 const findUsableCodeBinary = () => {
 	const candidates = ["code", "code-insiders"]
 	for (const candidate of candidates) {
-		const probe = spawnSync(candidate, ["--version"], { encoding: "utf8" })
+		const probe = spawnSync(resolveExecutable(candidate), ["--version"], { encoding: "utf8" })
 		if (probe.status === 0) {
-			return candidate
+			return resolveExecutable(candidate)
 		}
 	}
 	return null
@@ -168,20 +175,20 @@ if (isVsixStale()) {
 }
 
 if (!existsSync(extensionVsixPath)) {
-	console.log(`[LyfMark VS Code] VSIX nicht gefunden: ${extensionVsixPath}`)
+	console.log(`[LyfMark VS Code] VSIX not found: ${extensionVsixPath}`)
 	process.exit(0)
 }
 
 const currentVsixHash = readVsixHash()
 if (!currentVsixHash) {
-	console.log(`[LyfMark VS Code] VSIX konnte nicht geprueft werden: ${extensionVsixPath}`)
+	console.log(`[LyfMark VS Code] VSIX could not be verified: ${extensionVsixPath}`)
 	process.exit(0)
 }
 
 const codeBinary = findUsableCodeBinary()
 if (!codeBinary) {
 	console.log(
-		`[LyfMark VS Code] VS Code CLI ("code") nicht gefunden. Bitte die VSIX manuell installieren: ${extensionVsixPath}`,
+		`[LyfMark VS Code] VS Code CLI ("code") not found. Install the VSIX manually: ${extensionVsixPath}`,
 	)
 	process.exit(0)
 }
@@ -192,13 +199,13 @@ const extensionInstallState = getExtensionInstallState(codeBinary)
 
 if (markerIsCurrent && extensionInstallState === "installed") {
 	writeMarker(currentVsixHash)
-	console.log(`[LyfMark VS Code] Bereits installiert (${extensionRef}).`)
+	console.log(`[LyfMark VS Code] Already installed (${extensionRef}).`)
 	process.exit(0)
 }
 
 if (markerIsCurrent && extensionInstallState === "unknown") {
 	writeMarker(currentVsixHash)
-	console.log(`[LyfMark VS Code] Installation unveraendert (${extensionRef}, CLI-Status unbekannt).`)
+	console.log(`[LyfMark VS Code] Installation unchanged (${extensionRef}, CLI status unknown).`)
 	process.exit(0)
 }
 
@@ -215,7 +222,7 @@ if (
 	(installStateAfter !== "installed" && !installReportedSuccess)
 ) {
 	console.log(
-		`[LyfMark VS Code] Automatische Installation fehlgeschlagen. Bitte manuell installieren: ${extensionVsixPath}`,
+		`[LyfMark VS Code] Automatic installation failed. Install manually: ${extensionVsixPath}`,
 	)
 	if ((installResult.stdout ?? "").trim().length > 0) {
 		console.log(installResult.stdout.trim())
@@ -227,4 +234,4 @@ if (
 }
 
 writeMarker(currentVsixHash)
-console.log(`[LyfMark VS Code] Installation erfolgreich (${extensionRef}).`)
+console.log(`[LyfMark VS Code] Installation successful (${extensionRef}).`)
