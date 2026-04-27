@@ -19,8 +19,13 @@ const WINDOWS_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "windows", "in
 const WINDOWS_INSTALL_SCRIPT_PATH = path.join(PROJECT_ROOT, "installer", "windows", "install.ps1")
 const VSCODE_TASKS_PATH = path.join(PROJECT_ROOT, ".vscode", "tasks.json")
 const VSCODE_EXTENSION_INSTALLER_PATH = path.join(PROJECT_ROOT, "tools", "lyfmark-vscode", "install-local-extension.mjs")
+const REPAIR_PATH = path.join(PROJECT_ROOT, "tools", "repair.mjs")
 
 const BASE_NON_INTERACTIVE_ARGS = ["--yes", "--skip-git-identity", "--skip-ssh", "--skip-dependencies"]
+const BASE_TEST_ENV = {
+	...process.env,
+	LYFMARK_REPAIR_SKIP_VSCODE_EXTENSIONS: "1",
+}
 
 const runProcess = async (command, args, options = {}) =>
 	await new Promise((resolve, reject) => {
@@ -223,7 +228,7 @@ test("installer wizard accepts install info file for wrapper-provided data", asy
 
 	const result = await runProcess(process.execPath, [WIZARD_PATH, `--install-info=${installInfoPath}`], {
 		env: {
-			...process.env,
+			...BASE_TEST_ENV,
 			LYFMARK_INSTALLER_NO_PAUSE: "1",
 		},
 	})
@@ -319,7 +324,11 @@ test("VS Code extension installer uses bundled VSIX and CLI wrapper fallback", a
 	assert.match(source, /getWindowsCodeCliCandidates/u)
 	assert.match(source, /Microsoft VS Code", "bin", "code\.cmd"/u)
 	assert.match(source, /runCodeCli/u)
-	assert.match(source, /cmd\.exe/u)
+	assert.match(source, /shell: true/u)
+	assert.match(source, /windowsHide: true/u)
+	assert.match(source, /cwd: scriptDirectory/u)
+	assert.match(source, /basename\(extensionVsixPath\)/u)
+	assert.match(source, /vsixExists/u)
 	assert.match(source, /Using VS Code CLI/u)
 	assert.match(source, /Installing recommended extension/u)
 	assert.match(source, /Using bundled VSIX/u)
@@ -346,10 +355,19 @@ test("VS Code workspace does not auto-run extension installer on folder open", a
 	assert.doesNotMatch(source, /install-local-extension/u)
 })
 
+test("repair command installs VS Code extensions without folder-open tasks", async () => {
+	const source = await readFile(REPAIR_PATH, "utf8")
+
+	assert.match(source, /runVsCodeExtensionInstaller/u)
+	assert.match(source, /LYFMARK_REPAIR_SKIP_VSCODE_EXTENSIONS/u)
+	assert.match(source, /install-local-extension\.mjs/u)
+	assert.match(source, /VS Code extensions: ready/u)
+})
+
 test("installer wizard non-interactive flow runs through repair", { timeout: 180000 }, async () => {
 	const result = await runProcess(process.execPath, [WIZARD_PATH, ...BASE_NON_INTERACTIVE_ARGS], {
 		env: {
-			...process.env,
+			...BASE_TEST_ENV,
 			LYFMARK_INSTALLER_NO_PAUSE: "1",
 		},
 	})
@@ -361,7 +379,7 @@ test("installer wizard non-interactive flow runs through repair", { timeout: 180
 
 test("platform wrapper runs non-interactive installer flow", { timeout: 180000 }, async () => {
 	const env = {
-		...process.env,
+		...BASE_TEST_ENV,
 		LYFMARK_INSTALLER_NO_PAUSE: "1",
 	}
 

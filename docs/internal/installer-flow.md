@@ -132,6 +132,8 @@ Admin-/Tool-Installationsvertrag:
 - Wenn der Windows-Bootstrap den projektinternen Wizard ausführt, muss der Wizard keine manuellen Abschlussanweisungen zum Öffnen von VS Code ausgeben. Desktop-Link und Workspace-Start sind Aufgabe des Windows-Bootstraps.
 - Die lokale VS-Code-Extension wird aus der mitgelieferten `.vsix` installiert. Der Installer darf dabei nicht spontan `npx`/`vsce` ausführen, weil das zusätzliche Downloads und Prompts verursachen kann. Auf Windows muss die Extension-Installation direkt `code.cmd` aus dem VS-Code-Installationsordner nutzen können, wenn der `code`-CLI-Befehl nach frischer VS-Code-Installation noch nicht im aktuellen `PATH` liegt. `Code.exe` darf für `--install-extension` nicht verwendet werden, weil dadurch leere VS-Code-Fenster starten können.
 - Fehlt die mitgelieferte `.vsix` in einem bestehenden Projektordner, darf der Extension-Installer genau diese technische Paketdatei aus `HEAD` wiederherstellen. Grund: `git pull --ff-only` repariert lokal gelöschte, bereits getrackte Dateien nicht, wenn der Commit schon aktuell ist.
+- Für `code --install-extension` wird die `.vsix` relativ aus `tools/lyfmark-vscode` installiert, nicht über einen absoluten Windows-Pfad. Das vermeidet Pfadauflösungsprobleme, bei denen eine sichtbare Datei vom VS-Code-CLI trotzdem als fehlend gemeldet wird.
+- `npm run repair` führt die VS-Code-Extension-Installation ebenfalls aus. `.vscode/tasks.json` bleibt trotzdem ohne `runOn: folderOpen`, damit beim Öffnen der Workspace keine Fenster-Schleifen entstehen.
 
 ## Automatisierte Tests (CI)
 

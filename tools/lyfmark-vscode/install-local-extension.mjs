@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
-import { dirname, join, resolve } from "node:path"
+import { basename, dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url))
@@ -38,20 +38,16 @@ const resolveExecutable = (command) => {
 const isWindowsCommandScript = (command) =>
 	process.platform === "win32" && command.trim().toLowerCase().endsWith(".cmd")
 
-const quoteWindowsCmdArgument = (value) => {
-	const text = String(value)
-	if (/^[A-Za-z0-9_./:=+\-]+$/u.test(text)) {
-		return text
-	}
-	return `"${text.replace(/"/gu, '""')}"`
-}
-
 const runCodeCli = (codeCli, args) => {
 	if (isWindowsCommandScript(codeCli)) {
-		const commandLine = [quoteWindowsCmdArgument(codeCli), ...args.map(quoteWindowsCmdArgument)].join(" ")
-		return spawnSync("cmd.exe", ["/d", "/s", "/c", commandLine], { encoding: "utf8" })
+		return spawnSync(codeCli, args, {
+			cwd: scriptDirectory,
+			encoding: "utf8",
+			shell: true,
+			windowsHide: true,
+		})
 	}
-	return spawnSync(codeCli, args, { encoding: "utf8" })
+	return spawnSync(codeCli, args, { cwd: scriptDirectory, encoding: "utf8" })
 }
 
 const readMarker = () => {
@@ -226,7 +222,7 @@ const listInstalledExtensions = (codeBinary) =>
 	runCodeCli(codeBinary, buildCodeArguments(["--list-extensions", "--show-versions"]))
 
 const installVsix = (codeBinary, forceInstall) => {
-	const installArguments = buildCodeArguments(["--install-extension", extensionVsixPath])
+	const installArguments = buildCodeArguments(["--install-extension", basename(extensionVsixPath)])
 	if (forceInstall) {
 		installArguments.push("--force")
 	}
@@ -240,6 +236,9 @@ const installMarketplaceExtension = (codeBinary, extensionIdentifier) => {
 
 const formatSpawnResult = (command, args, result) => {
 	const commandLine = [command, ...args].join(" ")
+	const existsDetail = args.some((argument) => argument === extensionVsixPath || argument === basename(extensionVsixPath))
+		? `\nvsixExists: ${existsSync(extensionVsixPath) ? "yes" : "no"}`
+		: ""
 	const status = result.status === null ? "not available" : String(result.status)
 	const error = result.error instanceof Error ? `\nerror: ${result.error.message}` : ""
 	const stdout = (result.stdout ?? "").trim()
@@ -247,6 +246,7 @@ const formatSpawnResult = (command, args, result) => {
 	const output = [
 		`command: ${commandLine}`,
 		`exitCode: ${status}`,
+		existsDetail.trim(),
 		error.trim(),
 		stdout.length > 0 ? `stdout:\n${stdout}` : "",
 		stderr.length > 0 ? `stderr:\n${stderr}` : "",
@@ -339,7 +339,7 @@ const installCommandFailed =
 if (installCommandFailed) {
 	fail(
 		`Automatic installation failed. Install manually: ${extensionVsixPath}`,
-		formatSpawnResult(codeCli, buildCodeArguments(["--install-extension", extensionVsixPath]), installResult),
+		formatSpawnResult(codeCli, buildCodeArguments(["--install-extension", basename(extensionVsixPath)]), installResult),
 	)
 }
 

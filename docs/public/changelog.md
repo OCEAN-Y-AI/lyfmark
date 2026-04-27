@@ -8,6 +8,7 @@ Stand: 27.04.2026
 - Die Einrichtung der Projektabhängigkeiten läuft jetzt ohne Auswahlfrage automatisch weiter und zeigt bei längerer Dauer einen Wartestatus an.
 - Nach der Windows-Installation öffnet sich die vorbereitete VS-Code-Kundenansicht wieder automatisch; zusätzlich wird der Desktop-Link angelegt.
 - Die LyfMark-Erweiterung und empfohlene VS-Code-Erweiterungen werden nach einer frischen VS-Code-Installation zuverlässiger automatisch eingerichtet, ohne vorher leere VS-Code-Fenster zu öffnen.
+- `npm run repair` prüft die VS-Code-Erweiterungen jetzt mit und kann sie bei Bedarf erneut einrichten.
 
 Stand: 24.04.2026
 

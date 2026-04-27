@@ -3,6 +3,7 @@ import { lstat, mkdir, readlink, realpath, rm, symlink } from "node:fs/promises"
 import path from "node:path"
 
 const PROJECT_ROOT = process.cwd()
+const SKIP_VSCODE_EXTENSIONS_ENV = "LYFMARK_REPAIR_SKIP_VSCODE_EXTENSIONS"
 const SOURCE_ROOT = path.join(PROJECT_ROOT, "src")
 const ROOT_DIRECTORIES = [
 	path.join(PROJECT_ROOT, "pages"),
@@ -117,6 +118,30 @@ const runLyfmarkSync = async () =>
 		})
 	})
 
+const runVsCodeExtensionInstaller = async () =>
+	await new Promise((resolve, reject) => {
+		const installerPath = path.join(PROJECT_ROOT, "tools", "lyfmark-vscode", "install-local-extension.mjs")
+		const child = spawn(process.execPath, [installerPath], {
+			cwd: PROJECT_ROOT,
+			stdio: ["ignore", "pipe", "pipe"],
+		})
+
+		let stdout = ""
+		let stderr = ""
+		child.stdout.on("data", (chunk) => {
+			stdout += String(chunk)
+		})
+		child.stderr.on("data", (chunk) => {
+			stderr += String(chunk)
+		})
+		child.on("error", (error) => {
+			reject(error)
+		})
+		child.on("close", (code) => {
+			resolve({ code: code ?? 1, stdout, stderr })
+		})
+	})
+
 const parseSyncSummary = (stdout, stderr) => {
 	const combinedLines = `${stdout}\n${stderr}`
 		.split(/\r?\n/u)
@@ -186,6 +211,11 @@ const main = async () => {
 		)
 	}
 	const syncSummary = parseSyncSummary(syncResult.stdout, syncResult.stderr)
+	const shouldInstallVsCodeExtensions = process.env[SKIP_VSCODE_EXTENSIONS_ENV] !== "1"
+	const vsCodeExtensionResult = shouldInstallVsCodeExtensions ? await runVsCodeExtensionInstaller() : null
+	const vsCodeExtensionOutput = vsCodeExtensionResult
+		? `${vsCodeExtensionResult.stdout}\n${vsCodeExtensionResult.stderr}`.trim()
+		: ""
 
 	console.log("[repair] Health summary:")
 	console.log(
@@ -209,6 +239,16 @@ const main = async () => {
 		console.log("- Sync: completed, no generated file changes.")
 	} else {
 		console.log("- Sync: completed.")
+	}
+	if (!shouldInstallVsCodeExtensions) {
+		console.log("- VS Code extensions: skipped.")
+	} else if (vsCodeExtensionResult.code === 0) {
+		console.log("- VS Code extensions: ready.")
+	} else {
+		console.log("- VS Code extensions: could not be installed automatically.")
+		if (vsCodeExtensionOutput.length > 0) {
+			console.log(vsCodeExtensionOutput)
+		}
 	}
 
 	console.log('[repair] Finished. Project structure is ready. If "Sync" shows warnings, you can still continue.')
