@@ -69,6 +69,77 @@ function Update-CurrentProcessPath {
 	Add-PathIfExists (Join-Path $env:ProgramFiles "Microsoft VS Code\bin")
 }
 
+# Creates a repeated backslash run for Windows command-line argument quoting.
+function New-BackslashString {
+	param([int]$Count)
+	if ($Count -le 0) {
+		return ""
+	}
+	return "".PadLeft($Count, [char]92)
+}
+
+# Quotes one native argument for Windows PowerShell 5.1, where ProcessStartInfo.ArgumentList is unavailable.
+function ConvertTo-NativeArgument {
+	param([string]$Argument)
+
+	if ($null -eq $Argument -or $Argument.Length -eq 0) {
+		return '""'
+	}
+	if ($Argument -notmatch '[\s"]') {
+		return $Argument
+	}
+
+	$builder = New-Object System.Text.StringBuilder
+	[void]$builder.Append('"')
+	$backslashCount = 0
+	foreach ($character in $Argument.ToCharArray()) {
+		if ($character -eq '\') {
+			$backslashCount += 1
+			continue
+		}
+		if ($character -eq '"') {
+			[void]$builder.Append((New-BackslashString (($backslashCount * 2) + 1)))
+			[void]$builder.Append('"')
+			$backslashCount = 0
+			continue
+		}
+		if ($backslashCount -gt 0) {
+			[void]$builder.Append((New-BackslashString $backslashCount))
+			$backslashCount = 0
+		}
+		[void]$builder.Append($character)
+	}
+	if ($backslashCount -gt 0) {
+		[void]$builder.Append((New-BackslashString ($backslashCount * 2)))
+	}
+	[void]$builder.Append('"')
+	return $builder.ToString()
+}
+
+function Join-NativeArguments {
+	param([string[]]$Arguments)
+
+	$nativeArguments = @()
+	foreach ($argument in $Arguments) {
+		$nativeArguments += ConvertTo-NativeArgument $argument
+	}
+	return $nativeArguments -join " "
+}
+
+# Writes captured native process output without returning it into the PowerShell pipeline.
+function Write-NativeOutput {
+	param([string]$Output)
+	if ([string]::IsNullOrEmpty($Output)) {
+		return
+	}
+
+	$trimmedOutput = $Output.TrimEnd("`r", "`n")
+	if ($trimmedOutput.Length -gt 0) {
+		Write-Host $trimmedOutput
+	}
+}
+
+# Runs native commands outside the PowerShell pipeline so stdout and stderr cannot corrupt function return values.
 function Invoke-NativeCommand {
 	param(
 		[string]$Command,
@@ -78,22 +149,45 @@ function Invoke-NativeCommand {
 	)
 
 	Write-Host "[lyfmark-install] $Label"
-	if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) {
-		& $Command @Arguments 2>&1 | ForEach-Object { Write-Host $_ }
-	} else {
-		Push-Location $WorkingDirectory
-		try {
-			& $Command @Arguments 2>&1 | ForEach-Object { Write-Host $_ }
-		} finally {
-			Pop-Location
-		}
+
+	$startInfo = New-Object System.Diagnostics.ProcessStartInfo
+	$startInfo.FileName = $Command
+	$startInfo.Arguments = Join-NativeArguments $Arguments
+	$startInfo.UseShellExecute = $false
+	$startInfo.RedirectStandardOutput = $true
+	$startInfo.RedirectStandardError = $true
+	$startInfo.CreateNoWindow = $true
+	if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+		$startInfo.WorkingDirectory = $WorkingDirectory
 	}
 
-	if ($LASTEXITCODE -ne 0) {
-		if ($LASTEXITCODE -eq 3010) {
+	$process = New-Object System.Diagnostics.Process
+	$process.StartInfo = $startInfo
+
+	try {
+		if (-not $process.Start()) {
+			throw "$Label failed to start."
+		}
+		$stdoutTask = $process.StandardOutput.ReadToEndAsync()
+		$stderrTask = $process.StandardError.ReadToEndAsync()
+		$process.WaitForExit()
+		$stdoutTask.Wait()
+		$stderrTask.Wait()
+		$exitCode = $process.ExitCode
+		$stdoutText = $stdoutTask.Result
+		$stderrText = $stderrTask.Result
+	} finally {
+		$process.Dispose()
+	}
+
+	Write-NativeOutput $stdoutText
+	Write-NativeOutput $stderrText
+
+	if ($exitCode -ne 0) {
+		if ($exitCode -eq 3010) {
 			throw "$Label requires a Windows restart. Restart Windows and run LyfMark again."
 		}
-		throw "$Label failed with exit code $LASTEXITCODE."
+		throw "$Label failed with exit code $exitCode."
 	}
 }
 

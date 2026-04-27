@@ -126,7 +126,7 @@ Admin-/Tool-Installationsvertrag:
 - Danach läuft der eigentliche Projekt-Setup wieder im normalen Nutzerkontext weiter.
 - `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
 - Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
-- Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `git pull`) müssen an die Konsole geschrieben werden und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen.
+- Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `git pull`) müssen kontrolliert an die Konsole geschrieben werden und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Dafür wird `System.Diagnostics.ProcessStartInfo` mit getrennt gelesenem `stdout`/`stderr` genutzt, nicht eine PowerShell-`2>&1`-Pipeline. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen oder harmlose `stderr`-Statuszeilen als terminierende Fehler behandeln.
 
 ## Automatisierte Tests (CI)
 
@@ -157,6 +157,7 @@ Lokaler Vorabtest für Windows:
 
 - Vor einem Push kann der aktuelle Working Tree in ein temporäres lokales Git-Repository kopiert und `installer/windows/install.ps1` per Windows PowerShell dagegen ausgeführt werden. Das testet den echten Bootstrap-Pfad ohne GitHub-Update.
 - Der Installationsordner muss auf einem nativen Windows-Laufwerk liegen, z. B. unter `%TEMP%`. WSL-UNC-Pfade (`\\wsl.localhost\...`) oder per `pushd` gemappte WSL-Laufwerke reichen nur für Teiltests: `npm install` kann starten, aber Paket-Lifecycle-Skripte und Junction-/Symlink-Erstellung können dort an Windows-/WSL-Dateisystemgrenzen scheitern.
+- Lokale Bootstrap-Tests müssen `HOME` und `USERPROFILE` auf ein temporäres Testverzeichnis setzen, damit Git-Identität und SSH-Key-Erkennung nicht die echte Nutzerumgebung verändern oder auslesen.
 - Wenn Codex diesen Test aus WSL ausführen soll, muss ein temporärer Windows-Pfad in der Sandbox beschreibbar sein.
 
 ## VS-Code-Extension-Installation

@@ -84,7 +84,14 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.doesNotMatch(source, /"--allow-reboot"/u)
 	assert.match(source, /git".*@\("clone", "--depth", "1", \$RepositoryUrl, \$projectDirectory\)/su)
 	assert.match(source, /git".*@\("-C", \$projectDirectory, "pull", "--ff-only"\)/su)
-	assert.match(source, /& \$Command @Arguments 2>&1 \| ForEach-Object \{ Write-Host \$_ \}/u)
+	assert.match(source, /function ConvertTo-NativeArgument/u)
+	assert.match(source, /System\.Diagnostics\.ProcessStartInfo/u)
+	assert.match(source, /RedirectStandardOutput = \$true/u)
+	assert.match(source, /RedirectStandardError = \$true/u)
+	assert.match(source, /ReadToEndAsync/u)
+	assert.match(source, /Write-NativeOutput/u)
+	assert.doesNotMatch(source, /DataReceivedEventHandler/u)
+	assert.doesNotMatch(source, /2>&1 \| ForEach-Object/u)
 	assert.match(source, /\$projectDirectoryOutput = @\(Install-ProjectSources\)/u)
 	assert.match(source, /project source setup returned unexpected output/u)
 	assert.match(source, /function Install-LyfMarkVsCodeExtension[\s\S]*if \(\$SkipVSCode\)/u)
@@ -94,6 +101,44 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /New-DesktopWorkspaceShortcut \$projectDirectory/u)
 	assert.match(source, /node".*\$wizardArguments.*"Run LyfMark installer"/su)
 })
+
+test(
+	"windows install script native runner keeps native stderr non-terminating",
+	{ skip: process.platform !== "win32" ? "Windows PowerShell bootstrap behavior only runs on Windows." : false },
+	async () => {
+		const source = await readFile(WINDOWS_INSTALL_SCRIPT_PATH, "utf8")
+		const functionStart = source.indexOf("function New-BackslashString")
+		const functionEnd = source.indexOf("\nfunction Get-InstallInfoValue")
+		assert.notEqual(functionStart, -1)
+		assert.notEqual(functionEnd, -1)
+
+		const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "lyfmark-powershell-runner-"))
+		const probePath = path.join(temporaryDirectory, "native-runner-probe.ps1")
+		await writeFile(
+			probePath,
+			`${source.slice(functionStart, functionEnd)}
+
+$ErrorActionPreference = "Stop"
+$runnerOutput = @(Invoke-NativeCommand "cmd.exe" @("/d", "/s", "/c", "echo stdout probe & echo stderr probe 1>&2 & exit /b 0") "Run native stderr probe")
+if ($runnerOutput.Count -ne 0) {
+	throw "Invoke-NativeCommand leaked native output into the PowerShell pipeline."
+}
+`,
+			"utf8",
+		)
+
+		const result = await runProcess("powershell.exe", [
+			"-NoProfile",
+			"-ExecutionPolicy",
+			"Bypass",
+			"-File",
+			probePath,
+		])
+		assert.equal(result.code, 0, outputOf(result))
+		assert.match(result.stdout, /stdout probe/u)
+		assert.match(result.stdout, /stderr probe/u)
+	},
+)
 
 test("installer wizard accepts install info file for wrapper-provided data", async () => {
 	const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "lyfmark-install-info-test-"))
