@@ -127,7 +127,7 @@ Admin-/Tool-Installationsvertrag:
 - Wenn der Windows-Bootstrap per Remote-Scriptblock gestartet wird (`& ([scriptblock]::Create((irm "...")))`), existiert kein `$PSCommandPath`. Vor der Elevation muss der Installer seine aktuelle Scriptquelle deshalb in eine temporäre `.ps1` unter `%TEMP%\lyfmark-installer\` schreiben und den erhöhten Prozess mit diesem physischen `-File`-Pfad starten. Ein leerer `-File`-Pfad führt in Windows PowerShell zu Exit-Code `-196608`.
 - `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
 - Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
-- Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `git pull`) müssen kontrolliert an die Konsole geschrieben werden und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Dafür wird `System.Diagnostics.ProcessStartInfo` mit getrennt gelesenem `stdout`/`stderr` genutzt, nicht eine PowerShell-`2>&1`-Pipeline. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen oder harmlose `stderr`-Statuszeilen als terminierende Fehler behandeln.
+- Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `winget`, `git`, `node`) müssen live im Installationsfenster sichtbar bleiben und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Dafür wird `System.Diagnostics.ProcessStartInfo` ohne PowerShell-Pipeline und ohne `stdout`/`stderr`-Umleitung genutzt. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen, harmlose `stderr`-Statuszeilen als terminierende Fehler behandeln oder interaktive Wizard-Fragen verdecken.
 
 ## Automatisierte Tests (CI)
 

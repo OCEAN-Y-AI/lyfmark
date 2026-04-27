@@ -159,20 +159,7 @@ function Remove-TemporaryBootstrapScript {
 	}
 }
 
-# Writes captured native process output without returning it into the PowerShell pipeline.
-function Write-NativeOutput {
-	param([string]$Output)
-	if ([string]::IsNullOrEmpty($Output)) {
-		return
-	}
-
-	$trimmedOutput = $Output.TrimEnd("`r", "`n")
-	if ($trimmedOutput.Length -gt 0) {
-		Write-Host $trimmedOutput
-	}
-}
-
-# Runs native commands outside the PowerShell pipeline so stdout and stderr cannot corrupt function return values.
+# Runs native commands outside the PowerShell pipeline so output stays visible without corrupting function return values.
 function Invoke-NativeCommand {
 	param(
 		[string]$Command,
@@ -187,34 +174,35 @@ function Invoke-NativeCommand {
 	$startInfo.FileName = $Command
 	$startInfo.Arguments = Join-NativeArguments $Arguments
 	$startInfo.UseShellExecute = $false
-	$startInfo.RedirectStandardOutput = $true
-	$startInfo.RedirectStandardError = $true
-	$startInfo.CreateNoWindow = $true
+	$startInfo.RedirectStandardOutput = $false
+	$startInfo.RedirectStandardError = $false
+	$startInfo.RedirectStandardInput = $false
+	$startInfo.CreateNoWindow = $false
 	if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
 		$startInfo.WorkingDirectory = $WorkingDirectory
 	}
 
 	$process = New-Object System.Diagnostics.Process
 	$process.StartInfo = $startInfo
+	$processStarted = $false
 
 	try {
 		if (-not $process.Start()) {
 			throw "$Label failed to start."
 		}
-		$stdoutTask = $process.StandardOutput.ReadToEndAsync()
-		$stderrTask = $process.StandardError.ReadToEndAsync()
-		$process.WaitForExit()
-		$stdoutTask.Wait()
-		$stderrTask.Wait()
+		$processStarted = $true
+		while (-not $process.WaitForExit(250)) {
+		}
 		$exitCode = $process.ExitCode
-		$stdoutText = $stdoutTask.Result
-		$stderrText = $stderrTask.Result
+	} catch {
+		if ($processStarted -and -not $process.HasExited) {
+			$process.Kill()
+			$process.WaitForExit()
+		}
+		throw
 	} finally {
 		$process.Dispose()
 	}
-
-	Write-NativeOutput $stdoutText
-	Write-NativeOutput $stderrText
 
 	if ($exitCode -ne 0) {
 		if ($exitCode -eq 3010) {

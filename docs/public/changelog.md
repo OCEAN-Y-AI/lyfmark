@@ -4,7 +4,7 @@ Stand: 27.04.2026
 
 ## Verbesserungen bei Installation
 
-- Die Windows-Installation startet jetzt zuverlässiger, wenn sie über einen vorbereiteten Startbefehl ausgeführt wird. Dadurch kann die Installation benötigte Programme mit einmaliger Zustimmung einrichten und danach normal fortfahren.
+- Die Windows-Installation startet jetzt zuverlässiger, wenn sie über einen vorbereiteten Startbefehl ausgeführt wird, und zeigt Installationsfortschritt sowie Rückfragen direkt sichtbar an. Dadurch kann die Installation benötigte Programme mit einmaliger Zustimmung einrichten und danach nachvollziehbar fortfahren.
 
 Stand: 24.04.2026
 
