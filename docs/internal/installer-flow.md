@@ -131,6 +131,7 @@ Admin-/Tool-Installationsvertrag:
 - `npm install` ist im normalen Installer-Ablauf verpflichtend und darf keine Auswahlfrage an Endkunden stellen. Bei längerer Stille muss der Wizard eine klare Wartemeldung ausgeben, aber keine unnötige Erklärung, dass keine Eingabe nötig sei.
 - Wenn der Windows-Bootstrap den projektinternen Wizard ausführt, muss der Wizard keine manuellen Abschlussanweisungen zum Öffnen von VS Code ausgeben. Desktop-Link und Workspace-Start sind Aufgabe des Windows-Bootstraps.
 - Die lokale VS-Code-Extension wird aus der mitgelieferten `.vsix` installiert. Der Installer darf dabei nicht spontan `npx`/`vsce` ausführen, weil das zusätzliche Downloads und Prompts verursachen kann. Auf Windows muss die Extension-Installation direkt `code.cmd` aus dem VS-Code-Installationsordner nutzen können, wenn der `code`-CLI-Befehl nach frischer VS-Code-Installation noch nicht im aktuellen `PATH` liegt. `Code.exe` darf für `--install-extension` nicht verwendet werden, weil dadurch leere VS-Code-Fenster starten können.
+- Fehlt die mitgelieferte `.vsix` in einem bestehenden Projektordner, darf der Extension-Installer genau diese technische Paketdatei aus `HEAD` wiederherstellen. Grund: `git pull --ff-only` repariert lokal gelöschte, bereits getrackte Dateien nicht, wenn der Commit schon aktuell ist.
 
 ## Automatisierte Tests (CI)
 

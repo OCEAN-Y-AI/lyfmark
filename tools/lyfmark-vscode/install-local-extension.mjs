@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -81,6 +81,53 @@ const readVsixHash = () => {
 		return null
 	}
 	return computeFileHash(extensionVsixPath)
+}
+
+const listExtensionDirectoryFiles = () => {
+	try {
+		return readdirSync(scriptDirectory)
+			.sort()
+			.join("\n")
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error)
+		return `Directory listing failed: ${detail}`
+	}
+}
+
+const findAvailableVsix = () => {
+	try {
+		return readdirSync(scriptDirectory)
+			.filter((fileName) => fileName.toLowerCase().endsWith(".vsix"))
+			.sort()
+	} catch {
+		return []
+	}
+}
+
+const restoreBundledVsixFromGitIfMissing = () => {
+	if (existsSync(extensionVsixPath)) {
+		return
+	}
+	const relativeVsixPath = `tools/lyfmark-vscode/${extensionPackage.name}-${extensionPackage.version}.vsix`
+	const restoreResult = spawnSync("git", ["restore", "--worktree", "--source", "HEAD", "--", relativeVsixPath], {
+		cwd: repositoryRoot,
+		encoding: "utf8",
+	})
+	if (restoreResult.status === 0 && existsSync(extensionVsixPath)) {
+		console.log(`[LyfMark VS Code] Restored bundled VSIX from Git: ${relativeVsixPath}`)
+		return
+	}
+	fail(
+		`VSIX not found: ${extensionVsixPath}`,
+		[
+			"The LyfMark extension package is missing from this project folder.",
+			"If this is an existing test project, delete the project folder and run the installer again, or run: git restore --worktree --source HEAD -- tools/lyfmark-vscode/*.vsix",
+			`Extension directory: ${scriptDirectory}`,
+			`Available files:\n${listExtensionDirectoryFiles()}`,
+			`Available VSIX files:\n${findAvailableVsix().join("\n") || "(none)"}`,
+			formatSpawnResult("git", ["restore", "--worktree", "--source", "HEAD", "--", relativeVsixPath], restoreResult),
+		].join("\n"),
+	)
 }
 
 const readRecommendedExtensions = () => {
@@ -248,9 +295,8 @@ const installRecommendedExtensions = (codeCli) => {
 	}
 }
 
-if (!existsSync(extensionVsixPath)) {
-	fail(`VSIX not found: ${extensionVsixPath}`)
-}
+restoreBundledVsixFromGitIfMissing()
+console.log(`[LyfMark VS Code] Using bundled VSIX: ${extensionVsixPath}`)
 
 const currentVsixHash = readVsixHash()
 if (!currentVsixHash) {
