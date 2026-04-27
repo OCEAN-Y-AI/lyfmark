@@ -14,3 +14,4 @@ Rule of thumb:
 - Keep installer regressions close to the installer tests; Windows installer tests must guard that `npm` uses the active Node installation (`npm-cli.js`) or an absolute `npm.cmd` fallback and that duplicate `Path`/`PATH` variants are normalized before spawning child processes.
 - Installer E2E and manual bootstrap tests must isolate `HOME`/`USERPROFILE` in a temporary directory so test runs cannot alter the developer's real global Git identity or SSH setup.
 - Windows PowerShell bootstrap tests must guard that native command output cannot pollute installer function return values and that harmless native `stderr` output does not become a terminating PowerShell error.
+- Windows PowerShell bootstrap tests must guard remote scriptblock startup without `$PSCommandPath`; elevated re-entry must use a temporary physical `.ps1` file instead of `-File ""`, which exits with `-196608`.

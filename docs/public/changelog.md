@@ -1,5 +1,11 @@
 # Changelog
 
+Stand: 27.04.2026
+
+## Verbesserungen bei Installation
+
+- Die Windows-Installation startet jetzt zuverlässiger, wenn sie über einen vorbereiteten Startbefehl ausgeführt wird. Dadurch kann die Installation benötigte Programme mit einmaliger Zustimmung einrichten und danach normal fortfahren.
+
 Stand: 24.04.2026
 
 ## Verbesserungen bei Installation

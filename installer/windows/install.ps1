@@ -24,6 +24,8 @@ $ProgressPreference = "SilentlyContinue"
 chcp.com 65001 | Out-Null
 $script:EffectiveProjectName = ""
 $script:InitialBoundParameters = @{} + $PSBoundParameters
+$script:BootstrapSource = $MyInvocation.MyCommand.ScriptBlock.ToString()
+$script:TemporaryBootstrapScriptPath = ""
 
 function Write-Step {
 	param([string]$Message)
@@ -124,6 +126,37 @@ function Join-NativeArguments {
 		$nativeArguments += ConvertTo-NativeArgument $argument
 	}
 	return $nativeArguments -join " "
+}
+
+# Provides a physical script path for elevated re-entry even when LyfMark was started from an in-memory script block.
+function Get-ReentryScriptPath {
+	if (-not [string]::IsNullOrWhiteSpace($PSCommandPath) -and (Test-Path -LiteralPath $PSCommandPath)) {
+		return [IO.Path]::GetFullPath($PSCommandPath)
+	}
+
+	if (-not [string]::IsNullOrWhiteSpace($script:TemporaryBootstrapScriptPath) -and (Test-Path -LiteralPath $script:TemporaryBootstrapScriptPath)) {
+		return $script:TemporaryBootstrapScriptPath
+	}
+
+	if ([string]::IsNullOrWhiteSpace($script:BootstrapSource)) {
+		throw "LyfMark was started without a readable script source. Download installer/windows/install.ps1 to a file and run it with PowerShell."
+	}
+
+	$temporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) "lyfmark-installer"
+	New-Item -ItemType Directory -Force -Path $temporaryDirectory | Out-Null
+	$temporaryPath = Join-Path $temporaryDirectory ("install-" + [guid]::NewGuid().ToString("N") + ".ps1")
+	Set-Content -LiteralPath $temporaryPath -Value $script:BootstrapSource -Encoding UTF8
+	$script:TemporaryBootstrapScriptPath = $temporaryPath
+	return $temporaryPath
+}
+
+function Remove-TemporaryBootstrapScript {
+	if ([string]::IsNullOrWhiteSpace($script:TemporaryBootstrapScriptPath)) {
+		return
+	}
+	if (Test-Path -LiteralPath $script:TemporaryBootstrapScriptPath) {
+		Remove-Item -LiteralPath $script:TemporaryBootstrapScriptPath -Force -ErrorAction SilentlyContinue
+	}
 }
 
 # Writes captured native process output without returning it into the PowerShell pipeline.
@@ -350,7 +383,7 @@ function ConvertTo-ArgumentList {
 	$arguments = @(
 		"-NoProfile",
 		"-ExecutionPolicy", "Bypass",
-		"-File", "`"$PSCommandPath`"",
+		"-File", "`"$(Get-ReentryScriptPath)`"",
 		"-RepositoryUrl", "`"$RepositoryUrl`"",
 		"-InstallDirectory", "`"$InstallDirectory`"",
 		"-ProjectName", "`"$ResolvedProjectName`""
@@ -680,11 +713,13 @@ function Main {
 
 try {
 	Main
+	Remove-TemporaryBootstrapScript
 	Pause-IfNeeded
 	exit 0
 } catch {
 	Write-Host ""
 	Write-Host "[lyfmark-install] Error: $($_.Exception.Message)" -ForegroundColor Red
+	Remove-TemporaryBootstrapScript
 	Pause-IfNeeded
 	exit 1
 }

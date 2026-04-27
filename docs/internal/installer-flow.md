@@ -124,6 +124,7 @@ Admin-/Tool-Installationsvertrag:
 - Elevation wird nur für fehlende Systemprogramme verwendet.
 - Der erhöhte Prozess läuft mit `-AdminToolInstallOnly` und beendet sich ohne Pause.
 - Danach läuft der eigentliche Projekt-Setup wieder im normalen Nutzerkontext weiter.
+- Wenn der Windows-Bootstrap per Remote-Scriptblock gestartet wird (`& ([scriptblock]::Create((irm "...")))`), existiert kein `$PSCommandPath`. Vor der Elevation muss der Installer seine aktuelle Scriptquelle deshalb in eine temporäre `.ps1` unter `%TEMP%\lyfmark-installer\` schreiben und den erhöhten Prozess mit diesem physischen `-File`-Pfad starten. Ein leerer `-File`-Pfad führt in Windows PowerShell zu Exit-Code `-196608`.
 - `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
 - Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
 - Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `git pull`) müssen kontrolliert an die Konsole geschrieben werden und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Dafür wird `System.Diagnostics.ProcessStartInfo` mit getrennt gelesenem `stdout`/`stderr` genutzt, nicht eine PowerShell-`2>&1`-Pipeline. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen oder harmlose `stderr`-Statuszeilen als terminierende Fehler behandeln.

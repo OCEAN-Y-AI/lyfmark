@@ -82,6 +82,10 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /Install-WingetPackage "Microsoft\.VisualStudioCode" "Visual Studio Code" "code"/u)
 	assert.match(source, /"--disable-interactivity"/u)
 	assert.doesNotMatch(source, /"--allow-reboot"/u)
+	assert.match(source, /function Get-ReentryScriptPath/u)
+	assert.match(source, /TemporaryBootstrapScriptPath/u)
+	assert.match(source, /install-"\s*\+\s*\[guid\]::NewGuid\(\)\.ToString\("N"\)\s*\+\s*"\.ps1"/u)
+	assert.match(source, /"-File", "`"\$\(Get-ReentryScriptPath\)`""/u)
 	assert.match(source, /git".*@\("clone", "--depth", "1", \$RepositoryUrl, \$projectDirectory\)/su)
 	assert.match(source, /git".*@\("-C", \$projectDirectory, "pull", "--ff-only"\)/su)
 	assert.match(source, /function ConvertTo-NativeArgument/u)
@@ -137,6 +141,56 @@ if ($runnerOutput.Count -ne 0) {
 		assert.equal(result.code, 0, outputOf(result))
 		assert.match(result.stdout, /stdout probe/u)
 		assert.match(result.stdout, /stderr probe/u)
+	},
+)
+
+test(
+	"windows install script materializes remote scriptblock source for elevated re-entry",
+	{ skip: process.platform !== "win32" ? "Windows PowerShell bootstrap behavior only runs on Windows." : false },
+	async () => {
+		const source = await readFile(WINDOWS_INSTALL_SCRIPT_PATH, "utf8")
+		const functionStart = source.indexOf("function Get-ReentryScriptPath")
+		const functionEnd = source.indexOf("\n# Writes captured native process output")
+		assert.notEqual(functionStart, -1)
+		assert.notEqual(functionEnd, -1)
+
+		const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "lyfmark-powershell-reentry-"))
+		const probePath = path.join(temporaryDirectory, "reentry-probe.ps1")
+		await writeFile(
+			probePath,
+			`$ErrorActionPreference = "Stop"
+$script:BootstrapSource = "Write-Host remote-probe"
+$script:TemporaryBootstrapScriptPath = ""
+${source.slice(functionStart, functionEnd)}
+
+$path = Get-ReentryScriptPath
+if (-not (Test-Path -LiteralPath $path)) {
+	throw "Re-entry script was not created."
+}
+$content = Get-Content -LiteralPath $path -Raw
+if ($content -notmatch "remote-probe") {
+	throw "Re-entry script does not contain the remote source."
+}
+$samePath = Get-ReentryScriptPath
+if ($samePath -ne $path) {
+	throw "Re-entry script path was not reused."
+}
+Remove-TemporaryBootstrapScript
+if (Test-Path -LiteralPath $path) {
+	throw "Temporary re-entry script was not removed."
+}
+`,
+			"utf8",
+		)
+
+		const result = await runProcess("powershell.exe", [
+			"-NoProfile",
+			"-ExecutionPolicy",
+			"Bypass",
+			"-File",
+			probePath,
+		])
+		assert.equal(result.code, 0, outputOf(result))
 	},
 )
 
