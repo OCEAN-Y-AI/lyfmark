@@ -17,6 +17,7 @@ const markerPath = join(markerDirectory, ".lyfmark-vscode-installed")
 const extensionId = `${extensionPackage.publisher}.${extensionPackage.name}`
 const extensionVersion = extensionPackage.version
 const extensionRef = `${extensionId}@${extensionVersion}`
+const codeProbeFailures = []
 
 const fail = (message, detail = "") => {
 	console.error(`[LyfMark VS Code] ${message}`)
@@ -74,6 +75,7 @@ const findUsableCodeBinary = () => {
 		if (probe.status === 0) {
 			return resolveExecutable(candidate)
 		}
+		codeProbeFailures.push(formatSpawnResult(resolveExecutable(candidate), ["--version"], probe))
 	}
 	return null
 }
@@ -137,6 +139,24 @@ const installVsix = (codeBinary, forceInstall) => {
 	return spawnSync(codeBinary, installArguments, { encoding: "utf8" })
 }
 
+const formatSpawnResult = (command, args, result) => {
+	const commandLine = [command, ...args].join(" ")
+	const status = result.status === null ? "not available" : String(result.status)
+	const error = result.error instanceof Error ? `\nerror: ${result.error.message}` : ""
+	const stdout = (result.stdout ?? "").trim()
+	const stderr = (result.stderr ?? "").trim()
+	const output = [
+		`command: ${commandLine}`,
+		`exitCode: ${status}`,
+		error.trim(),
+		stdout.length > 0 ? `stdout:\n${stdout}` : "",
+		stderr.length > 0 ? `stderr:\n${stderr}` : "",
+	]
+		.filter((line) => line.length > 0)
+		.join("\n")
+	return output
+}
+
 const didInstallCommandFail = (installResult) => {
 	const combinedOutput = `${installResult.stdout ?? ""}\n${installResult.stderr ?? ""}`.toLowerCase()
 	return (
@@ -169,7 +189,10 @@ if (!currentVsixHash) {
 
 const codeBinary = findUsableCodeBinary()
 if (!codeBinary) {
-	fail(`VS Code was not found. Install the VSIX manually after opening VS Code: ${extensionVsixPath}`)
+	fail(
+		`VS Code was not found. Install the VSIX manually after opening VS Code: ${extensionVsixPath}`,
+		codeProbeFailures.join("\n\n"),
+	)
 }
 
 console.log(`[LyfMark VS Code] Using VS Code executable: ${codeBinary}`)
@@ -191,16 +214,20 @@ if (markerIsCurrent && extensionInstallState === "unknown") {
 const shouldForceInstall = extensionInstallState === "installed" || !markerIsCurrent
 const installResult = installVsix(codeBinary, shouldForceInstall)
 const installStateAfter = getExtensionInstallState(codeBinary)
-const installReportedSuccess = `${installResult.stdout ?? ""}\n${installResult.stderr ?? ""}`
-	.toLowerCase()
-	.includes("successfully installed")
-
-if (
+const installCommandFailed =
 	installResult.status !== 0 ||
-	didInstallCommandFail(installResult) ||
-	(installStateAfter !== "installed" && !installReportedSuccess)
-) {
-	fail(`Automatic installation failed. Install manually: ${extensionVsixPath}`, `${installResult.stdout ?? ""}\n${installResult.stderr ?? ""}`)
+	installResult.error instanceof Error ||
+	didInstallCommandFail(installResult)
+
+if (installCommandFailed) {
+	fail(
+		`Automatic installation failed. Install manually: ${extensionVsixPath}`,
+		formatSpawnResult(codeBinary, buildCodeArguments(["--install-extension", extensionVsixPath]), installResult),
+	)
+}
+
+if (installStateAfter !== "installed") {
+	console.log("[LyfMark VS Code] VS Code accepted the install command, but the installed extension list could not be verified.")
 }
 
 writeMarker(currentVsixHash)

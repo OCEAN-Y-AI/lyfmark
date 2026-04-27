@@ -108,6 +108,7 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /Install-LyfMarkVsCodeExtension \$projectDirectory/u)
 	assert.match(source, /New-DesktopWorkspaceShortcut \$projectDirectory/u)
 	assert.match(source, /node".*\$wizardArguments.*"Run LyfMark installer"/su)
+	assert.match(source, /LYFMARK_INSTALLER_BOOTSTRAP_FINALIZES/u)
 })
 
 test(
@@ -300,8 +301,10 @@ test("installer wizard uses robust child-process handling", async () => {
 	assert.match(source, /resolveCommandInvocation/u)
 	assert.match(source, /npm --version/u)
 	assert.match(source, /\["install", "--no-audit", "--no-fund"\]/u)
-	assert.match(source, /Dependencies are installed automatically\. No input is required\./u)
+	assert.doesNotMatch(source, /No input is required/u)
 	assert.match(source, /npm install is still running\. Please wait\./u)
+	assert.match(source, /LYFMARK_INSTALLER_BOOTSTRAP_FINALIZES/u)
+	assert.match(source, /LyfMark will now finish the setup and open Visual Studio Code\./u)
 	assert.doesNotMatch(source, /args: \["\/d", "\/s", "\/c", `\$\{command\}\.cmd`, \.\.\.args\]/u)
 	assert.match(e2eSource, /command: WINDOWS_WRAPPER_PATH/u)
 	assert.match(e2eSource, /buildArgs: \(wrapperArgs\) => wrapperArgs/u)
@@ -316,6 +319,8 @@ test("VS Code extension installer uses bundled VSIX and direct Code.exe fallback
 	assert.match(source, /getWindowsCodeExecutableCandidates/u)
 	assert.match(source, /Microsoft VS Code", "Code\.exe"/u)
 	assert.match(source, /Using VS Code executable/u)
+	assert.match(source, /VS Code accepted the install command/u)
+	assert.match(source, /formatSpawnResult/u)
 	assert.match(source, /process\.exit\(1\)/u)
 	assert.doesNotMatch(source, /@vscode\/vsce/u)
 	assert.doesNotMatch(source, /isVsixStale/u)

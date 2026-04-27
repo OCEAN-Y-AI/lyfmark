@@ -555,7 +555,13 @@ function Invoke-ProjectWizard {
 		}
 	}
 
-	Invoke-NativeCommand "node" $wizardArguments "Run LyfMark installer" $ProjectDirectory
+	$previousBootstrapFinalizes = $env:LYFMARK_INSTALLER_BOOTSTRAP_FINALIZES
+	try {
+		$env:LYFMARK_INSTALLER_BOOTSTRAP_FINALIZES = "1"
+		Invoke-NativeCommand "node" $wizardArguments "Run LyfMark installer" $ProjectDirectory
+	} finally {
+		$env:LYFMARK_INSTALLER_BOOTSTRAP_FINALIZES = $previousBootstrapFinalizes
+	}
 }
 
 function Install-LyfMarkVsCodeExtension {

@@ -14,6 +14,7 @@ const GIT_DOWNLOAD_URL = "https://git-scm.com/downloads"
 const DEFAULT_GIT_NAME_ENV = "LYFMARK_INSTALLER_DEFAULT_GIT_NAME"
 const DEFAULT_GIT_EMAIL_ENV = "LYFMARK_INSTALLER_DEFAULT_GIT_EMAIL"
 const DEFAULT_SSH_COMMENT_ENV = "LYFMARK_INSTALLER_DEFAULT_SSH_COMMENT"
+const BOOTSTRAP_FINALIZES_ENV = "LYFMARK_INSTALLER_BOOTSTRAP_FINALIZES"
 
 const BOOLEAN_OPTIONS = new Map([
 	["--yes", "yes"],
@@ -544,7 +545,6 @@ const ensureProjectRoot = async () => {
 const runSetupCommands = async (options) => {
 	if (!options.skipDependencies) {
 		console.log(formatStep("Install dependencies (npm install)"))
-		console.log("[installer] Dependencies are installed automatically. No input is required.")
 		const installResult = await runCommandInteractive(
 			"npm",
 			["install", "--no-audit", "--no-fund"],
@@ -574,6 +574,10 @@ const runSetupCommands = async (options) => {
 
 const printFinalSummary = () => {
 	console.log("\n[installer] Installation finished.")
+	if (process.env[BOOTSTRAP_FINALIZES_ENV] === "1") {
+		console.log("[installer] LyfMark will now finish the setup and open Visual Studio Code.")
+		return
+	}
 	console.log("[installer] Next steps:")
 	console.log("- Open the project in VS Code (customer workspace: .vscode/lyfmark.customer.code-workspace).")
 	console.log("- Start the development server: npm run dev")
