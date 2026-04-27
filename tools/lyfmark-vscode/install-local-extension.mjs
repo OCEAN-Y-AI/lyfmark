@@ -13,6 +13,7 @@ const extensionVsixPath = join(
 	`${extensionPackage.name}-${extensionPackage.version}.vsix`,
 )
 const markerDirectory = join(repositoryRoot, ".vscode")
+const extensionRecommendationsPath = join(markerDirectory, "extensions.json")
 const markerPath = join(markerDirectory, ".lyfmark-vscode-installed")
 const extensionId = `${extensionPackage.publisher}.${extensionPackage.name}`
 const extensionVersion = extensionPackage.version
@@ -32,6 +33,25 @@ const resolveExecutable = (command) => {
 		return `${command}.cmd`
 	}
 	return command
+}
+
+const isWindowsCommandScript = (command) =>
+	process.platform === "win32" && command.trim().toLowerCase().endsWith(".cmd")
+
+const quoteWindowsCmdArgument = (value) => {
+	const text = String(value)
+	if (/^[A-Za-z0-9_./:=+\-]+$/u.test(text)) {
+		return text
+	}
+	return `"${text.replace(/"/gu, '""')}"`
+}
+
+const runCodeCli = (codeCli, args) => {
+	if (isWindowsCommandScript(codeCli)) {
+		const commandLine = [quoteWindowsCmdArgument(codeCli), ...args.map(quoteWindowsCmdArgument)].join(" ")
+		return spawnSync("cmd.exe", ["/d", "/s", "/c", commandLine], { encoding: "utf8" })
+	}
+	return spawnSync(codeCli, args, { encoding: "utf8" })
 }
 
 const readMarker = () => {
@@ -63,47 +83,74 @@ const readVsixHash = () => {
 	return computeFileHash(extensionVsixPath)
 }
 
-const findUsableCodeBinary = () => {
+const readRecommendedExtensions = () => {
+	if (!existsSync(extensionRecommendationsPath)) {
+		return []
+	}
+	try {
+		const parsed = JSON.parse(readFileSync(extensionRecommendationsPath, "utf8"))
+		if (!Array.isArray(parsed.recommendations)) {
+			return []
+		}
+		return parsed.recommendations
+			.filter((recommendation) => typeof recommendation === "string")
+			.map((recommendation) => recommendation.trim())
+			.filter((recommendation) => recommendation.length > 0 && recommendation !== extensionId)
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error)
+		fail(`VS Code extension recommendations could not be read: ${extensionRecommendationsPath}`, detail)
+	}
+}
+
+const findUsableCodeCli = () => {
 	const candidates = [
-		process.env.LYFMARK_VSCODE_CODE_PATH ?? "",
-		...(process.platform === "win32" ? getWindowsCodeExecutableCandidates() : []),
+		process.env.LYFMARK_VSCODE_CLI_PATH ?? "",
+		...(process.platform === "win32" ? getWindowsCodeCliCandidates() : []),
 		"code",
 		"code-insiders",
 	].filter((candidate) => candidate.trim().length > 0)
 	for (const candidate of candidates) {
-		const probe = spawnSync(resolveExecutable(candidate), ["--version"], { encoding: "utf8" })
+		const resolvedCandidate = resolveExecutable(candidate)
+		const probe = runCodeCli(resolvedCandidate, ["--version"])
 		if (probe.status === 0) {
-			return resolveExecutable(candidate)
+			return resolvedCandidate
 		}
-		codeProbeFailures.push(formatSpawnResult(resolveExecutable(candidate), ["--version"], probe))
+		codeProbeFailures.push(formatSpawnResult(resolvedCandidate, ["--version"], probe))
 	}
 	return null
 }
 
-const getWindowsCodeExecutableCandidates = () => {
+const getWindowsCodeCliCandidates = () => {
 	const candidates = []
 	if (process.env.LOCALAPPDATA) {
-		candidates.push(join(process.env.LOCALAPPDATA, "Programs", "Microsoft VS Code", "Code.exe"))
+		candidates.push(join(process.env.LOCALAPPDATA, "Programs", "Microsoft VS Code", "bin", "code.cmd"))
 	}
 	if (process.env.ProgramFiles) {
-		candidates.push(join(process.env.ProgramFiles, "Microsoft VS Code", "Code.exe"))
+		candidates.push(join(process.env.ProgramFiles, "Microsoft VS Code", "bin", "code.cmd"))
 	}
 	if (process.env["ProgramFiles(x86)"]) {
-		candidates.push(join(process.env["ProgramFiles(x86)"], "Microsoft VS Code", "Code.exe"))
+		candidates.push(join(process.env["ProgramFiles(x86)"], "Microsoft VS Code", "bin", "code.cmd"))
 	}
 	return candidates
 }
 
 const getExtensionInstallState = (codeBinary) => {
-	const listResult = listInstalledExtensions(codeBinary)
-	if (listResult.status !== 0) {
+	const installedExtensions = readInstalledExtensions(codeBinary)
+	if (!installedExtensions) {
 		return "unknown"
 	}
-	const installedExtensions = listResult.stdout
+	return installedExtensions.includes(extensionRef.toLowerCase()) ? "installed" : "not-installed"
+}
+
+const readInstalledExtensions = (codeBinary) => {
+	const listResult = listInstalledExtensions(codeBinary)
+	if (listResult.status !== 0) {
+		return null
+	}
+	return listResult.stdout
 		.split(/\r?\n/u)
 		.map((line) => line.trim().toLowerCase())
 		.filter((line) => line.length > 0)
-	return installedExtensions.includes(extensionRef.toLowerCase()) ? "installed" : "not-installed"
 }
 
 const isWslContext = () =>
@@ -129,14 +176,19 @@ const markerMatchesCurrentVsix = (marker, currentHash) =>
 	marker.ref === extensionRef && marker.hash === currentHash
 
 const listInstalledExtensions = (codeBinary) =>
-	spawnSync(codeBinary, buildCodeArguments(["--list-extensions", "--show-versions"]), { encoding: "utf8" })
+	runCodeCli(codeBinary, buildCodeArguments(["--list-extensions", "--show-versions"]))
 
 const installVsix = (codeBinary, forceInstall) => {
 	const installArguments = buildCodeArguments(["--install-extension", extensionVsixPath])
 	if (forceInstall) {
 		installArguments.push("--force")
 	}
-	return spawnSync(codeBinary, installArguments, { encoding: "utf8" })
+	return runCodeCli(codeBinary, installArguments)
+}
+
+const installMarketplaceExtension = (codeBinary, extensionIdentifier) => {
+	const installArguments = buildCodeArguments(["--install-extension", extensionIdentifier])
+	return runCodeCli(codeBinary, installArguments)
 }
 
 const formatSpawnResult = (command, args, result) => {
@@ -157,16 +209,6 @@ const formatSpawnResult = (command, args, result) => {
 	return output
 }
 
-const didInstallCommandFail = (installResult) => {
-	const combinedOutput = `${installResult.stdout ?? ""}\n${installResult.stderr ?? ""}`.toLowerCase()
-	return (
-		combinedOutput.includes("failed installing extensions") ||
-		combinedOutput.includes("unable to write file") ||
-		combinedOutput.includes(" eacces") ||
-		combinedOutput.includes(" erofs")
-	)
-}
-
 const writeMarker = (currentHash) => {
 	if (!existsSync(markerDirectory)) {
 		mkdirSync(markerDirectory, { recursive: true })
@@ -178,6 +220,34 @@ const writeMarker = (currentHash) => {
 	)
 }
 
+const installRecommendedExtensions = (codeCli) => {
+	const recommendations = readRecommendedExtensions()
+	const installedExtensions = readInstalledExtensions(codeCli)
+	for (const recommendation of recommendations) {
+		const normalizedRecommendation = recommendation.toLowerCase()
+		const isAlreadyInstalled = installedExtensions?.some(
+			(installedExtension) =>
+				installedExtension === normalizedRecommendation ||
+				installedExtension.startsWith(`${normalizedRecommendation}@`),
+		)
+		if (isAlreadyInstalled) {
+			console.log(`[LyfMark VS Code] Recommended extension already installed: ${recommendation}`)
+			continue
+		}
+		console.log(`[LyfMark VS Code] Installing recommended extension: ${recommendation}`)
+		const installResult = installMarketplaceExtension(codeCli, recommendation)
+		if (
+			installResult.status !== 0 ||
+			installResult.error instanceof Error
+		) {
+			fail(
+				`Recommended extension installation failed: ${recommendation}`,
+				formatSpawnResult(codeCli, buildCodeArguments(["--install-extension", recommendation]), installResult),
+			)
+		}
+	}
+}
+
 if (!existsSync(extensionVsixPath)) {
 	fail(`VSIX not found: ${extensionVsixPath}`)
 }
@@ -187,19 +257,21 @@ if (!currentVsixHash) {
 	fail(`VSIX could not be verified: ${extensionVsixPath}`)
 }
 
-const codeBinary = findUsableCodeBinary()
-if (!codeBinary) {
+const codeCli = findUsableCodeCli()
+if (!codeCli) {
 	fail(
-		`VS Code was not found. Install the VSIX manually after opening VS Code: ${extensionVsixPath}`,
+		`VS Code CLI was not found. Install the VSIX manually after opening VS Code: ${extensionVsixPath}`,
 		codeProbeFailures.join("\n\n"),
 	)
 }
 
-console.log(`[LyfMark VS Code] Using VS Code executable: ${codeBinary}`)
+console.log(`[LyfMark VS Code] Using VS Code CLI: ${codeCli}`)
+
+installRecommendedExtensions(codeCli)
 
 const marker = readMarker()
 const markerIsCurrent = markerMatchesCurrentVsix(marker, currentVsixHash)
-const extensionInstallState = getExtensionInstallState(codeBinary)
+const extensionInstallState = getExtensionInstallState(codeCli)
 
 if (markerIsCurrent && extensionInstallState === "installed") {
 	writeMarker(currentVsixHash)
@@ -212,17 +284,16 @@ if (markerIsCurrent && extensionInstallState === "unknown") {
 }
 
 const shouldForceInstall = extensionInstallState === "installed" || !markerIsCurrent
-const installResult = installVsix(codeBinary, shouldForceInstall)
-const installStateAfter = getExtensionInstallState(codeBinary)
+const installResult = installVsix(codeCli, shouldForceInstall)
+const installStateAfter = getExtensionInstallState(codeCli)
 const installCommandFailed =
 	installResult.status !== 0 ||
-	installResult.error instanceof Error ||
-	didInstallCommandFail(installResult)
+	installResult.error instanceof Error
 
 if (installCommandFailed) {
 	fail(
 		`Automatic installation failed. Install manually: ${extensionVsixPath}`,
-		formatSpawnResult(codeBinary, buildCodeArguments(["--install-extension", extensionVsixPath]), installResult),
+		formatSpawnResult(codeCli, buildCodeArguments(["--install-extension", extensionVsixPath]), installResult),
 	)
 }
 

@@ -102,7 +102,7 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /\$projectDirectoryOutput = @\(Install-ProjectSources\)/u)
 	assert.match(source, /project source setup returned unexpected output/u)
 	assert.match(source, /function Install-LyfMarkVsCodeExtension[\s\S]*if \(\$SkipVSCode\)/u)
-	assert.match(source, /LYFMARK_VSCODE_CODE_PATH/u)
+	assert.match(source, /LYFMARK_VSCODE_CLI_PATH/u)
 	assert.match(source, /function New-DesktopWorkspaceShortcut[\s\S]*if \(\$SkipVSCode\)/u)
 	assert.match(source, /function Open-CustomerWorkspace[\s\S]*if \(\$SkipVSCode -or \$SkipOpenWorkspace\)/u)
 	assert.match(source, /Install-LyfMarkVsCodeExtension \$projectDirectory/u)
@@ -312,19 +312,24 @@ test("installer wizard uses robust child-process handling", async () => {
 	assert.doesNotMatch(e2eSource, /cmd\.exe[\s\S]*WINDOWS_WRAPPER_PATH[\s\S]*wrapperArgs\.join/u)
 })
 
-test("VS Code extension installer uses bundled VSIX and direct Code.exe fallback", async () => {
+test("VS Code extension installer uses bundled VSIX and CLI wrapper fallback", async () => {
 	const source = await readFile(VSCODE_EXTENSION_INSTALLER_PATH, "utf8")
 
-	assert.match(source, /LYFMARK_VSCODE_CODE_PATH/u)
-	assert.match(source, /getWindowsCodeExecutableCandidates/u)
-	assert.match(source, /Microsoft VS Code", "Code\.exe"/u)
-	assert.match(source, /Using VS Code executable/u)
+	assert.match(source, /LYFMARK_VSCODE_CLI_PATH/u)
+	assert.match(source, /getWindowsCodeCliCandidates/u)
+	assert.match(source, /Microsoft VS Code", "bin", "code\.cmd"/u)
+	assert.match(source, /runCodeCli/u)
+	assert.match(source, /cmd\.exe/u)
+	assert.match(source, /Using VS Code CLI/u)
+	assert.match(source, /Installing recommended extension/u)
 	assert.match(source, /VS Code accepted the install command/u)
 	assert.match(source, /formatSpawnResult/u)
 	assert.match(source, /process\.exit\(1\)/u)
+	assert.doesNotMatch(source, /didInstallCommandFail/u)
 	assert.doesNotMatch(source, /@vscode\/vsce/u)
 	assert.doesNotMatch(source, /isVsixStale/u)
 	assert.doesNotMatch(source, /buildVsix/u)
+	assert.doesNotMatch(source, /Code\.exe/u)
 })
 
 test("VS Code workspace does not auto-run extension installer on folder open", async () => {

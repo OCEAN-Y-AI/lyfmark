@@ -578,11 +578,36 @@ function Install-LyfMarkVsCodeExtension {
 	}
 
 	Write-Step "Installing LyfMark VS Code extension"
-	$codeExecutable = Get-CodeExecutablePath
-	if (-not [string]::IsNullOrWhiteSpace($codeExecutable)) {
-		$env:LYFMARK_VSCODE_CODE_PATH = $codeExecutable
+	$codeCli = Get-CodeCliPath
+	if (-not [string]::IsNullOrWhiteSpace($codeCli)) {
+		$env:LYFMARK_VSCODE_CLI_PATH = $codeCli
 	}
 	Invoke-NativeCommand "node" @($installerPath) "Install LyfMark VS Code extension" $ProjectDirectory
+}
+
+function Get-CodeCliPath {
+	$candidates = @()
+	if (-not [string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+		$candidates += (Join-Path $env:LOCALAPPDATA "Programs\Microsoft VS Code\bin\code.cmd")
+	}
+	if (-not [string]::IsNullOrWhiteSpace($env:ProgramFiles)) {
+		$candidates += (Join-Path $env:ProgramFiles "Microsoft VS Code\bin\code.cmd")
+	}
+	if (-not [string]::IsNullOrWhiteSpace(${env:ProgramFiles(x86)})) {
+		$candidates += (Join-Path ${env:ProgramFiles(x86)} "Microsoft VS Code\bin\code.cmd")
+	}
+	foreach ($candidate in $candidates) {
+		if (-not [string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate)) {
+			return $candidate
+		}
+	}
+
+	$command = Get-Command "code" -ErrorAction SilentlyContinue
+	if ($command) {
+		return $command.Source
+	}
+
+	return ""
 }
 
 function Get-CodeExecutablePath {

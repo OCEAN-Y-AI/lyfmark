@@ -7,7 +7,7 @@ Stand: 27.04.2026
 - Die Windows-Installation startet jetzt zuverlässiger, wenn sie über einen vorbereiteten Startbefehl ausgeführt wird, und zeigt Installationsfortschritt sowie Rückfragen direkt sichtbar an. Dadurch kann die Installation benötigte Programme mit einmaliger Zustimmung einrichten und danach nachvollziehbar fortfahren.
 - Die Einrichtung der Projektabhängigkeiten läuft jetzt ohne Auswahlfrage automatisch weiter und zeigt bei längerer Dauer einen Wartestatus an.
 - Nach der Windows-Installation öffnet sich die vorbereitete VS-Code-Kundenansicht wieder automatisch; zusätzlich wird der Desktop-Link angelegt.
-- Die LyfMark-Erweiterung für VS Code wird nach einer frischen VS-Code-Installation zuverlässiger automatisch eingerichtet.
+- Die LyfMark-Erweiterung und empfohlene VS-Code-Erweiterungen werden nach einer frischen VS-Code-Installation zuverlässiger automatisch eingerichtet, ohne vorher leere VS-Code-Fenster zu öffnen.
 
 Stand: 24.04.2026
 
