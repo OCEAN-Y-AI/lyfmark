@@ -252,7 +252,7 @@ const writeChunk = (stream, chunk) => {
 	}
 }
 
-const runCommandInteractive = async (command, args, contextLabel) =>
+const runCommandInteractive = async (command, args, contextLabel, options = {}) =>
 	await new Promise((resolve) => {
 		let child
 		try {
@@ -275,12 +275,30 @@ const runCommandInteractive = async (command, args, contextLabel) =>
 			return
 		}
 
+		const progressMessage =
+			typeof options.progressMessage === "string" && options.progressMessage.trim().length > 0
+				? options.progressMessage.trim()
+				: ""
+		const progressIntervalMilliseconds =
+			Number.isInteger(options.progressIntervalMilliseconds) && options.progressIntervalMilliseconds > 0
+				? options.progressIntervalMilliseconds
+				: 0
+		const progressTimer =
+			progressMessage.length > 0 && progressIntervalMilliseconds > 0
+				? setInterval(() => {
+						console.log(`[installer] ${progressMessage}`)
+					}, progressIntervalMilliseconds)
+				: null
+
 		let settled = false
 		const finish = (result) => {
 			if (settled) {
 				return
 			}
 			settled = true
+			if (progressTimer) {
+				clearInterval(progressTimer)
+			}
 			resolve(result)
 		}
 
@@ -526,7 +544,16 @@ const ensureProjectRoot = async () => {
 const runSetupCommands = async (options) => {
 	if (!options.skipDependencies) {
 		console.log(formatStep("Install dependencies (npm install)"))
-		const installResult = await runCommandInteractive("npm", ["install"], "npm install")
+		console.log("[installer] Dependencies are installed automatically. No input is required.")
+		const installResult = await runCommandInteractive(
+			"npm",
+			["install", "--no-audit", "--no-fund"],
+			"npm install",
+			{
+				progressMessage: "npm install is still running. Please wait.",
+				progressIntervalMilliseconds: 15000,
+			},
+		)
 		if (!installResult.ok) {
 			throw new Error(formatCommandFailure(installResult))
 		}

@@ -18,6 +18,7 @@ const MACOS_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "macos", "instal
 const WINDOWS_WRAPPER_PATH = path.join(PROJECT_ROOT, "installer", "windows", "install.cmd")
 const WINDOWS_INSTALL_SCRIPT_PATH = path.join(PROJECT_ROOT, "installer", "windows", "install.ps1")
 const VSCODE_TASKS_PATH = path.join(PROJECT_ROOT, ".vscode", "tasks.json")
+const VSCODE_EXTENSION_INSTALLER_PATH = path.join(PROJECT_ROOT, "tools", "lyfmark-vscode", "install-local-extension.mjs")
 
 const BASE_NON_INTERACTIVE_ARGS = ["--yes", "--skip-git-identity", "--skip-ssh", "--skip-dependencies"]
 
@@ -101,6 +102,7 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /\$projectDirectoryOutput = @\(Install-ProjectSources\)/u)
 	assert.match(source, /project source setup returned unexpected output/u)
 	assert.match(source, /function Install-LyfMarkVsCodeExtension[\s\S]*if \(\$SkipVSCode\)/u)
+	assert.match(source, /LYFMARK_VSCODE_CODE_PATH/u)
 	assert.match(source, /function New-DesktopWorkspaceShortcut[\s\S]*if \(\$SkipVSCode\)/u)
 	assert.match(source, /function Open-CustomerWorkspace[\s\S]*if \(\$SkipVSCode -or \$SkipOpenWorkspace\)/u)
 	assert.match(source, /Install-LyfMarkVsCodeExtension \$projectDirectory/u)
@@ -297,11 +299,27 @@ test("installer wizard uses robust child-process handling", async () => {
 	assert.match(source, /createSpawnEnv/u)
 	assert.match(source, /resolveCommandInvocation/u)
 	assert.match(source, /npm --version/u)
+	assert.match(source, /\["install", "--no-audit", "--no-fund"\]/u)
+	assert.match(source, /Dependencies are installed automatically\. No input is required\./u)
+	assert.match(source, /npm install is still running\. Please wait\./u)
 	assert.doesNotMatch(source, /args: \["\/d", "\/s", "\/c", `\$\{command\}\.cmd`, \.\.\.args\]/u)
 	assert.match(e2eSource, /command: WINDOWS_WRAPPER_PATH/u)
 	assert.match(e2eSource, /buildArgs: \(wrapperArgs\) => wrapperArgs/u)
 	assert.match(e2eSource, /shell: true/u)
 	assert.doesNotMatch(e2eSource, /cmd\.exe[\s\S]*WINDOWS_WRAPPER_PATH[\s\S]*wrapperArgs\.join/u)
+})
+
+test("VS Code extension installer uses bundled VSIX and direct Code.exe fallback", async () => {
+	const source = await readFile(VSCODE_EXTENSION_INSTALLER_PATH, "utf8")
+
+	assert.match(source, /LYFMARK_VSCODE_CODE_PATH/u)
+	assert.match(source, /getWindowsCodeExecutableCandidates/u)
+	assert.match(source, /Microsoft VS Code", "Code\.exe"/u)
+	assert.match(source, /Using VS Code executable/u)
+	assert.match(source, /process\.exit\(1\)/u)
+	assert.doesNotMatch(source, /@vscode\/vsce/u)
+	assert.doesNotMatch(source, /isVsixStale/u)
+	assert.doesNotMatch(source, /buildVsix/u)
 })
 
 test("VS Code workspace does not auto-run extension installer on folder open", async () => {

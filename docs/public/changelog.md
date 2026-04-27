@@ -5,6 +5,8 @@ Stand: 27.04.2026
 ## Verbesserungen bei Installation
 
 - Die Windows-Installation startet jetzt zuverlässiger, wenn sie über einen vorbereiteten Startbefehl ausgeführt wird, und zeigt Installationsfortschritt sowie Rückfragen direkt sichtbar an. Dadurch kann die Installation benötigte Programme mit einmaliger Zustimmung einrichten und danach nachvollziehbar fortfahren.
+- Die Einrichtung der Projektabhängigkeiten läuft jetzt ohne Auswahlfrage automatisch weiter und zeigt bei längerer Dauer einen Wartestatus an.
+- Die LyfMark-Erweiterung für VS Code wird nach einer frischen VS-Code-Installation zuverlässiger automatisch eingerichtet.
 
 Stand: 24.04.2026
 

@@ -128,6 +128,8 @@ Admin-/Tool-Installationsvertrag:
 - `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
 - Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
 - Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `winget`, `git`, `node`) müssen live im Installationsfenster sichtbar bleiben und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Dafür wird `System.Diagnostics.ProcessStartInfo` ohne PowerShell-Pipeline und ohne `stdout`/`stderr`-Umleitung genutzt. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen, harmlose `stderr`-Statuszeilen als terminierende Fehler behandeln oder interaktive Wizard-Fragen verdecken.
+- `npm install` ist im normalen Installer-Ablauf verpflichtend und darf keine Auswahlfrage an Endkunden stellen. Bei längerer Stille muss der Wizard eine klare Wartemeldung ausgeben.
+- Die lokale VS-Code-Extension wird aus der mitgelieferten `.vsix` installiert. Der Installer darf dabei nicht spontan `npx`/`vsce` ausführen, weil das zusätzliche Downloads und Prompts verursachen kann. Auf Windows muss die Extension-Installation direkt `Code.exe` nutzen können, wenn der `code`-CLI-Befehl nach frischer VS-Code-Installation noch nicht im aktuellen `PATH` liegt.
 
 ## Automatisierte Tests (CI)
 

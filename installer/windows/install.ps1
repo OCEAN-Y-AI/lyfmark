@@ -572,6 +572,10 @@ function Install-LyfMarkVsCodeExtension {
 	}
 
 	Write-Step "Installing LyfMark VS Code extension"
+	$codeExecutable = Get-CodeExecutablePath
+	if (-not [string]::IsNullOrWhiteSpace($codeExecutable)) {
+		$env:LYFMARK_VSCODE_CODE_PATH = $codeExecutable
+	}
 	Invoke-NativeCommand "node" @($installerPath) "Install LyfMark VS Code extension" $ProjectDirectory
 }
 
