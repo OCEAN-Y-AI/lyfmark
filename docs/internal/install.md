@@ -99,6 +99,7 @@ Release-/Paket-Sicherheit:
 - Core-Version für den nächsten Testkunden: `1.0`
 - Core-Release lokal bauen und prüfen: `npm run build:release`
 - Core-Release vorhandene Artefakte hochladen: `npm run release:core`
+- Core-Release vor Upload in einer VM mit lokalem `-CorePackageUrl` testen: `docs/internal/release-flow.md`
 - GitHub dient für Kundenpakete zunächst als Download-Host, nicht als Vertrauenswurzel.
 - Das Kundenprojekt darf nicht die Git-Historie des internen LyfMark-Repositorys enthalten.
 - Die vollautomatische GitHub-Repository-Erstellung per OAuth/GitHub-App bleibt Folgearbeit; der pragmatische Testkundenstand akzeptiert eine vorhandene leere Repository-URL.
@@ -139,6 +140,7 @@ Hinweise:
 - Smoke-Tests: `npm run test:installer`
 - Voller E2E-Ablauf (automatisch): `npm run test:installer:e2e:auto`
 - Voller E2E-Ablauf (manuell/interaktiv): `npm run test:installer:e2e:manual`
+- Pre-Release-Windows-VM-Test ohne GitHub-Upload: `npm run build:release`, dann `installer/windows/install.ps1` mit `-CorePackageUrl` auf das lokale `dist-release/lyfmark-core-1.0.zip` ausführen.
 
 Der E2E-Test nutzt ein temporäres HOME und mockt die GitHub-URL-Öffnung, damit der komplette Setup-Flow reproduzierbar ohne echten Login geprüft werden kann.
 

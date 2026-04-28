@@ -1,0 +1,18 @@
+# Keep LyfMark text files stable across Windows, macOS, and Linux customer machines.
+* text=auto eol=lf
+
+# Binary package and media assets must never be normalized.
+*.avif binary
+*.gif binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.mp4 binary
+*.pdf binary
+*.png binary
+*.webm binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.vsix binary

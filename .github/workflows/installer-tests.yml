@@ -128,7 +128,7 @@ jobs:
             throw "Core package hash does not match manifest."
           }
           $packageEntries = @(tar -tf $corePackage)
-          foreach ($requiredEntry in @("package.json", "package-lock.json", "installer/windows/install.ps1", "tools/installer/wizard.mjs", "tools/package-core.mjs", "tools/release.mjs")) {
+          foreach ($requiredEntry in @(".gitattributes", "package.json", "package-lock.json", "installer/windows/install.ps1", "tools/installer/wizard.mjs", "tools/package-core.mjs", "tools/release.mjs")) {
             if ($packageEntries -notcontains $requiredEntry) {
               throw "Core package is missing required entry: $requiredEntry"
             }

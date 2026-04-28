@@ -6,6 +6,7 @@ Stand: 28.04.2026
 
 - Neue Kundenprojekte werden jetzt aus einem vorbereiteten LyfMark-Core-Paket eingerichtet und als eigenes Kundenprojekt mit `main`-Branch vorbereitet. Dadurch startet das Projekt unabhängig vom internen LyfMark-Entwicklungsrepository.
 - Die Windows-Installation verwendet für Projektabhängigkeiten jetzt den reproduzierbaren Installationsweg. Dadurch passt die lokale Einrichtung verlässlicher zum ausgelieferten Projektstand.
+- Die Windows-Installation zeigt bei längeren Programminstallationen besser an, dass sie weiterarbeitet, und hält die erste Git-Vorbereitung ruhiger. Dadurch wirkt der Start weniger verwirrend, ohne wichtige Fehlermeldungen zu verbergen.
 
 Stand: 27.04.2026
 

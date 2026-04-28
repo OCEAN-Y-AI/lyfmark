@@ -24,6 +24,7 @@ const PACKAGE_CORE_PATH = path.join(PROJECT_ROOT, "tools", "package-core.mjs")
 const BUILD_RELEASE_PATH = path.join(PROJECT_ROOT, "tools", "build-release.mjs")
 const RELEASE_PATH = path.join(PROJECT_ROOT, "tools", "release.mjs")
 const HMR_LINK_TEST_PATH = path.join(PROJECT_ROOT, "tools", "test-hmr-links.mjs")
+const GIT_ATTRIBUTES_PATH = path.join(PROJECT_ROOT, ".gitattributes")
 
 const BASE_NON_INTERACTIVE_ARGS = ["--yes", "--skip-git-identity", "--skip-ssh", "--skip-dependencies"]
 const BASE_TEST_ENV = {
@@ -95,6 +96,9 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /Install-WingetPackage "Microsoft\.VisualStudioCode" "Visual Studio Code" "code"/u)
 	assert.match(source, /"--disable-interactivity"/u)
 	assert.doesNotMatch(source, /"--allow-reboot"/u)
+	assert.match(source, /CloseStandardInput/u)
+	assert.match(source, /KeepAliveSeconds/u)
+	assert.match(source, /winget install \$PackageId" -CloseStandardInput \$true -KeepAliveSeconds 15/u)
 	assert.match(source, /function Get-ReentryScriptPath/u)
 	assert.match(source, /TemporaryBootstrapScriptPath/u)
 	assert.match(source, /install-"\s*\+\s*\[guid\]::NewGuid\(\)\.ToString\("N"\)\s*\+\s*"\.ps1"/u)
@@ -110,7 +114,8 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /git".*@\("config", "--global", "--add", "safe\.directory", \$ProjectDirectory\)/su)
 	assert.match(source, /git".*@\("-C", \$ProjectDirectory, "branch", "-M", "main"\)/su)
 	assert.match(source, /function Publish-CustomerRepository/u)
-	assert.match(source, /git".*@\("-C", \$ProjectDirectory, "commit", "-m", "Initial LyfMark website"\)/su)
+	assert.match(source, /Invoke-NativeCommandQuiet "git" @\("-C", \$ProjectDirectory, "add", "\."\)/u)
+	assert.match(source, /Invoke-NativeCommandQuiet "git" @\("-C", \$ProjectDirectory, "commit", "-m", "Initial LyfMark website"\)/u)
 	assert.match(source, /git".*@\("-C", \$ProjectDirectory, "push", "-u", "origin", "main"\)/su)
 	assert.doesNotMatch(source, /git".*@\("clone"/su)
 	assert.doesNotMatch(source, /pull", "--ff-only"/u)
@@ -119,8 +124,10 @@ test("windows install script exposes remote bootstrap contract", async () => {
 	assert.match(source, /System\.Diagnostics\.ProcessStartInfo/u)
 	assert.match(source, /RedirectStandardOutput = \$false/u)
 	assert.match(source, /RedirectStandardError = \$false/u)
-	assert.match(source, /RedirectStandardInput = \$false/u)
+	assert.match(source, /RedirectStandardInput = \$CloseStandardInput/u)
 	assert.match(source, /while \(-not \$process\.WaitForExit\(250\)\)/u)
+	assert.match(source, /Still working: \$Label/u)
+	assert.match(source, /function Invoke-NativeCommandQuiet/u)
 	assert.doesNotMatch(source, /ReadToEndAsync/u)
 	assert.doesNotMatch(source, /Write-NativeOutput/u)
 	assert.doesNotMatch(source, /DataReceivedEventHandler/u)
@@ -390,6 +397,14 @@ test("HMR link test repairs mirrors and starts dev server with safe npm resoluti
 	assert.match(source, /resolveCommandInvocation\("npm"/u)
 	assert.match(source, /createSpawnEnv/u)
 	assert.doesNotMatch(source, /spawn\("npm"/u)
+})
+
+test("Git attributes keep customer initial commit output stable across operating systems", async () => {
+	const source = await readFile(GIT_ATTRIBUTES_PATH, "utf8")
+
+	assert.match(source, /\* text=auto eol=lf/u)
+	assert.match(source, /\*\.vsix binary/u)
+	assert.match(source, /\*\.zip binary/u)
 })
 
 test("core release package builder creates explicit package artifact and manifest", async () => {

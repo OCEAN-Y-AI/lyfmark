@@ -42,7 +42,8 @@ Nach dem Upload den Installer in einer frischen Windows-VM testen.
 - Der Working Tree ist sauber.
 - `package-lock.json` ist aktuell.
 - Keine temporären Testdaten oder Kundendaten sind im Repository.
-- GitHub CLI (`gh`) ist installiert und für `OCEAN-Y-AI/lyfmark` authentifiziert.
+- Für automatischen Upload: GitHub CLI (`gh`) ist installiert und mit Schreibrechten für `OCEAN-Y-AI/lyfmark` authentifiziert.
+- Für eingeschränkte/Read-only-Tokens: Upload erfolgt manuell über die GitHub-Weboberfläche.
 - Das Release wird nicht aus dem automatisch von GitHub erzeugten Source-Archiv gebaut.
 
 Der Paketbuilder bricht ohne `--allow-dirty` ab, wenn der Working Tree nicht sauber ist. `--allow-dirty` ist nur für lokale Tests erlaubt, niemals für ein echtes Release.
@@ -162,6 +163,7 @@ Pflichtdateien im ZIP prüfen:
 
 ```bash
 for required in \
+	.gitattributes \
 	package.json \
 	package-lock.json \
 	installer/windows/install.ps1 \
@@ -196,9 +198,42 @@ LYFMARK_REPAIR_SKIP_VSCODE_EXTENSIONS=1 npm ci --prefix "$tmp" --no-audit --no-f
 
 Dieser Test ist wichtig, weil Archiv-/Link-Verhalten erst am entpackten Paket zuverlässig sichtbar wird.
 
+## Pre-Release Installer Test Ohne Upload
+
+Ein Release darf nicht erst nach dem GitHub-Upload zum ersten Mal in einer VM getestet werden. Der Installer kann dasselbe Core-Paket vorab über `-CorePackageUrl` aus einer lokalen Datei oder von einem temporären lokalen HTTP-Server installieren.
+
+Minimaler Ablauf:
+
+```bash
+npm run build:release
+python3 -m http.server 8787
+```
+
+In der Windows-VM dann das lokale Skript und das lokale ZIP verwenden. `<host-ip>` ist die aus der VM erreichbare Adresse des Entwicklungsrechners:
+
+```powershell
+$base = "http://<host-ip>:8787"
+Invoke-WebRequest -Uri "$base/installer/windows/install.ps1" -OutFile "$env:TEMP\lyfmark-install.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\lyfmark-install.ps1" -CorePackageUrl "$base/dist-release/lyfmark-core-1.0.zip" -ProjectName "Release Candidate" -SkipOpenWorkspace
+```
+
+Alternativ können `installer/windows/install.ps1` und `dist-release/lyfmark-core-1.0.zip` direkt in die VM kopiert werden:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Temp\install.ps1" -CorePackageUrl "C:\Temp\lyfmark-core-1.0.zip" -ProjectName "Release Candidate" -SkipOpenWorkspace
+```
+
+Empfohlene VM-Gates:
+
+- Saubere VM mit bereits installierten Tools: prüft Paketdownload/-kopie, Entpacken, lokales Git-Repository, `npm ci`, `npm run repair`, Initial Commit, Extension-Installation und Workspace-Erstellung.
+- Frische VM ohne Git/Node/VS Code: prüft zusätzlich die `winget`-Toolinstallation. Diese Prüfung kann GitHub Actions nicht zuverlässig ersetzen, weil Hosted Runner die meisten Tools bereits mitbringen und kein echter Endkunden-Desktop sind.
+- Nach erfolgreichem Test VM auf Checkpoint zurücksetzen, statt wiederholt neue GitHub-Releases zu erzeugen.
+
+Erst wenn dieser VM-Test grün ist, werden ZIP und Manifest als GitHub Release Asset veröffentlicht.
+
 ## GitHub Release Hochladen
 
-Standardbefehl:
+Komfortpfad mit einem GitHub-Token, der Releases schreiben darf:
 
 ```bash
 npm run release:core
@@ -211,7 +246,7 @@ Der Befehl baut absichtlich nichts. Er prüft stattdessen vor dem Upload:
 - sauberer Working Tree
 - Branch `main`
 - `origin` zeigt auf `OCEAN-Y-AI/lyfmark`
-- GitHub CLI ist verfügbar und authentifiziert
+- GitHub CLI ist verfügbar und mit Release-Schreibrechten authentifiziert
 - `HEAD` entspricht `origin/main`
 - Release-Tag fehlt oder zeigt bereits auf `HEAD`
 - `dist-release/lyfmark-core-1.0.zip` und Manifest existieren
@@ -254,6 +289,74 @@ npm run release
 ```
 
 prüft anhand der Release-Tags, welche Paketveröffentlichungen ausstehen. Auch dieser Befehl baut nicht selbst; fehlende Artefakte müssen vorher mit dem passenden Build-Befehl erzeugt werden.
+
+## GitHub Release Manuell Hochladen
+
+Dieser Fallback ist der Standard, wenn der lokal verfügbare GitHub-CLI-Token absichtlich eingeschränkt ist oder keine Release-Schreibrechte hat.
+
+Vorbereitung:
+
+```bash
+git status --short
+git branch --show-current
+git rev-parse HEAD
+git rev-parse origin/main
+npm run build:release
+```
+
+Voraussetzungen:
+
+- `git status --short` gibt nichts aus.
+- Branch ist `main`.
+- `HEAD` und `origin/main` sind identisch.
+- `dist-release/lyfmark-core-1.0.zip` existiert.
+- `dist-release/lyfmark-core-1.0.manifest.json` existiert.
+- Im Manifest passt `sourceCommit` zu `git rev-parse HEAD`.
+
+Manueller GitHub-Ablauf:
+
+1. GitHub öffnen:
+
+```text
+https://github.com/OCEAN-Y-AI/lyfmark/releases/new
+```
+
+2. `Choose a tag` setzen:
+
+```text
+core-v1.0
+```
+
+3. Target auf den aktuellen `main`-Commit setzen. Wenn GitHub nur Branch-Auswahl anbietet, `main` wählen und vor dem Veröffentlichen prüfen, dass `main` auf denselben Commit zeigt wie `git rev-parse HEAD`.
+
+4. Release-Titel setzen:
+
+```text
+LyfMark Core 1.0
+```
+
+5. Release-Beschreibung setzen:
+
+```text
+LyfMark Core 1.0.
+
+Commit: <output of git rev-parse HEAD>
+
+Generated by npm run build:release.
+```
+
+6. Diese Dateien hochladen:
+
+```text
+dist-release/lyfmark-core-1.0.zip
+dist-release/lyfmark-core-1.0.manifest.json
+```
+
+7. Als normalen Release veröffentlichen, nicht als Draft oder Prerelease, sofern es das aktive Kundenpaket sein soll.
+
+8. Danach die Download-URL-Prüfung aus dem nächsten Abschnitt ausführen.
+
+Nicht die automatisch von GitHub erzeugten Source-Code-Archive als Kundenpaket verwenden. Sie enthalten nicht den geprüften LyfMark-Release-Artefaktvertrag.
 
 ## Download-URL Prüfen
 

@@ -168,7 +168,9 @@ function Invoke-NativeCommand {
 		[string]$Command,
 		[string[]]$Arguments,
 		[string]$Label,
-		[string]$WorkingDirectory = ""
+		[string]$WorkingDirectory = "",
+		[bool]$CloseStandardInput = $false,
+		[int]$KeepAliveSeconds = 0
 	)
 
 	Write-Host "[lyfmark-install] $Label"
@@ -179,7 +181,7 @@ function Invoke-NativeCommand {
 	$startInfo.UseShellExecute = $false
 	$startInfo.RedirectStandardOutput = $false
 	$startInfo.RedirectStandardError = $false
-	$startInfo.RedirectStandardInput = $false
+	$startInfo.RedirectStandardInput = $CloseStandardInput
 	$startInfo.CreateNoWindow = $false
 	if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
 		$startInfo.WorkingDirectory = $WorkingDirectory
@@ -194,7 +196,15 @@ function Invoke-NativeCommand {
 			throw "$Label failed to start."
 		}
 		$processStarted = $true
+		if ($CloseStandardInput) {
+			$process.StandardInput.Close()
+		}
+		$lastKeepAlive = Get-Date
 		while (-not $process.WaitForExit(250)) {
+			if ($KeepAliveSeconds -gt 0 -and ((Get-Date) - $lastKeepAlive).TotalSeconds -ge $KeepAliveSeconds) {
+				Write-Host "[lyfmark-install] Still working: $Label"
+				$lastKeepAlive = Get-Date
+			}
 		}
 		$exitCode = $process.ExitCode
 	} catch {
@@ -271,6 +281,17 @@ function Invoke-NativeCommandCapture {
 	}
 
 	return $stdout.Trim()
+}
+
+function Invoke-NativeCommandQuiet {
+	param(
+		[string]$Command,
+		[string[]]$Arguments,
+		[string]$Label,
+		[string]$WorkingDirectory = ""
+	)
+
+	[void](Invoke-NativeCommandCapture $Command $Arguments $Label $WorkingDirectory)
 }
 
 function Get-InstallInfoValue {
@@ -550,7 +571,7 @@ function Install-WingetPackage {
 		"--accept-source-agreements",
 		"--disable-interactivity",
 		"--silent"
-	) "winget install $PackageId"
+	) "winget install $PackageId" -CloseStandardInput $true -KeepAliveSeconds 15
 
 	Update-CurrentProcessPath
 	if (-not (Test-CommandAvailable $ProbeCommand)) {
@@ -841,13 +862,13 @@ function Ensure-InitialCustomerCommit {
 	}
 
 	Write-Step "Creating initial customer Git commit"
-	Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "add", ".") "Stage LyfMark project files"
+	Invoke-NativeCommandQuiet "git" @("-C", $ProjectDirectory, "add", ".") "Stage LyfMark project files"
 	$statusAfterAdd = Get-GitStatusPorcelain $ProjectDirectory
 	if ([string]::IsNullOrWhiteSpace($statusAfterAdd)) {
 		Write-Host "[lyfmark-install] No project changes need to be committed."
 		return
 	}
-	Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "commit", "-m", "Initial LyfMark website") "Create initial customer commit"
+	Invoke-NativeCommandQuiet "git" @("-C", $ProjectDirectory, "commit", "-m", "Initial LyfMark website") "Create initial customer commit"
 }
 
 function Resolve-GithubRepositoryUrl {

@@ -154,8 +154,10 @@ Admin-/Tool-Installationsvertrag:
 - Danach läuft der eigentliche Projekt-Setup wieder im normalen Nutzerkontext weiter.
 - Wenn der Windows-Bootstrap per Remote-Scriptblock gestartet wird (`& ([scriptblock]::Create((irm "...")))`), existiert kein `$PSCommandPath`. Vor der Elevation muss der Installer seine aktuelle Scriptquelle deshalb in eine temporäre `.ps1` unter `%TEMP%\lyfmark-installer\` schreiben und den erhöhten Prozess mit diesem physischen `-File`-Pfad starten. Ein leerer `-File`-Pfad führt in Windows PowerShell zu Exit-Code `-196608`.
 - `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
+- Der `winget`-Prozess bekommt keinen offenen Standard-Input und gibt bei längerer Laufzeit periodisch eine Wartemeldung aus. Dadurch sollen versteckte Eingabeaufforderungen oder scheinbar hängende Installationen im Kundensetup vermieden werden.
 - Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
 - Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `winget`, `git`, `node`) müssen live im Installationsfenster sichtbar bleiben und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Dafür wird `System.Diagnostics.ProcessStartInfo` ohne PowerShell-Pipeline und ohne `stdout`/`stderr`-Umleitung genutzt. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen, harmlose `stderr`-Statuszeilen als terminierende Fehler behandeln oder interaktive Wizard-Fragen verdecken.
+- Git-Ausgaben beim Staging und Initial Commit werden im Erfolgsfall unterdrückt; nur echte Fehler werden mit Details angezeigt. Zusätzlich definiert `.gitattributes` stabile Zeilenenden, damit Windows keine verwirrenden CRLF-Hinweise beim ersten Commit erzeugt.
 - `npm ci` ist im normalen Installer-Ablauf verpflichtend und darf keine Auswahlfrage an Endkunden stellen. Bei längerer Stille muss der Wizard eine klare Wartemeldung ausgeben, aber keine unnötige Erklärung, dass keine Eingabe nötig sei.
 - Wenn der Windows-Bootstrap den projektinternen Wizard ausführt, muss der Wizard keine manuellen Abschlussanweisungen zum Öffnen von VS Code ausgeben. Desktop-Link und Workspace-Start sind Aufgabe des Windows-Bootstraps.
 - Die lokale VS-Code-Extension wird aus der mitgelieferten `.vsix` installiert. Der Installer darf dabei nicht spontan `npx`/`vsce` ausführen, weil das zusätzliche Downloads und Prompts verursachen kann. Auf Windows muss die Extension-Installation direkt `code.cmd` aus dem VS-Code-Installationsordner nutzen können, wenn der `code`-CLI-Befehl nach frischer VS-Code-Installation noch nicht im aktuellen `PATH` liegt. `Code.exe` darf für `--install-extension` nicht verwendet werden, weil dadurch leere VS-Code-Fenster starten können.
@@ -174,6 +176,7 @@ Admin-/Tool-Installationsvertrag:
 - GitHub-Workflow: `.github/workflows/installer-tests.yml`
 - Core-Release lokal bauen und prüfen: `npm run build:release`
 - Core-Release vorhandene Artefakte hochladen: `npm run release:core`
+- Pre-Release-VM-Test vor Upload: `docs/internal/release-flow.md`
 
 CI-Contract:
 

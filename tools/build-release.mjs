@@ -13,6 +13,7 @@ const DEFAULT_CORE_VERSION = "1.0"
 const RELEASE_DIRECTORY = path.join(PROJECT_ROOT, "dist-release")
 const REQUIRED_RELEASE_FILES = [
 	"AGENTS.md",
+	".gitattributes",
 	"README.md",
 	"package.json",
 	"package-lock.json",
@@ -46,6 +47,7 @@ const REQUIRED_RELEASE_FILES = [
 	"docs/public/onboarding.md",
 ]
 const REQUIRED_ARCHIVE_ENTRIES = [
+	".gitattributes",
 	"package.json",
 	"package-lock.json",
 	"installer/windows/install.ps1",
