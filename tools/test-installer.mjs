@@ -164,11 +164,7 @@ test(
 		assert.notEqual(functionStart, -1)
 		assert.notEqual(functionEnd, -1)
 
-		const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "lyfmark-powershell-reentry-"))
-		const probePath = path.join(temporaryDirectory, "reentry-probe.ps1")
-		await writeFile(
-			probePath,
-			`$ErrorActionPreference = "Stop"
+		const probeSource = `$ErrorActionPreference = "Stop"
 $script:BootstrapSource = "Write-Host remote-probe"
 $script:TemporaryBootstrapScriptPath = ""
 ${source.slice(functionStart, functionEnd)}
@@ -189,16 +185,14 @@ Remove-TemporaryBootstrapScript
 if (Test-Path -LiteralPath $path) {
 	throw "Temporary re-entry script was not removed."
 }
-`,
-			"utf8",
-		)
+`
 
 		const result = await runProcess("powershell.exe", [
 			"-NoProfile",
 			"-ExecutionPolicy",
 			"Bypass",
-			"-File",
-			probePath,
+			"-Command",
+			probeSource,
 		])
 		assert.equal(result.code, 0, outputOf(result))
 	},

@@ -68,14 +68,17 @@ Beispiel (manuell):
 
 - Die Extension-Installation läuft über den Installer oder einen expliziten Repair-/Support-Schritt, nicht über einen Folder-Open-Task.
 - Der Installer ruft `tools/lyfmark-vscode/install-local-extension.mjs` einmalig vor dem ersten Öffnen der Customer-Workspace auf.
+- `npm run repair` ruft denselben Installer ebenfalls auf, damit fehlende VS-Code-Erweiterungen gezielt nachinstalliert werden können.
 - `.vscode/tasks.json` darf keinen `runOn: folderOpen`-Task für die Extension-Installation enthalten, weil ein solcher Task beim Öffnen der Workspace wieder `code` starten und Fenster-Schleifen erzeugen kann.
-- Das Script prüft zuerst, ob die lokale `.vsix` gegenüber den Quellen (`extension.cjs`, `rules.cjs`, `package.json`, ...) veraltet ist; bei Bedarf wird sie automatisch neu gebaut.
-- Danach installiert/aktualisiert das Script die Extension, wenn die VS Code CLI (`code`) verfügbar ist.
+- Das Script installiert ausschließlich die mitgelieferte `.vsix`; im Kunden-Setup wird nicht spontan mit `npx`/`vsce` gebaut.
+- Auf Windows nutzt das Script den CLI-Wrapper `code.cmd`, niemals direkt `Code.exe`, damit keine leeren VS-Code-Fenster vor dem finalen Workspace-Start geöffnet werden.
+- Die `.vsix` wird relativ aus `tools/lyfmark-vscode` installiert. Absolute Windows-Pfade werden für `code --install-extension` vermieden, weil Wrapper-Schichten sichtbare Dateien sonst als fehlend melden können.
 - In WSL wird die Installation gezielt gegen das Remote-Target (`--remote wsl+<Distro>`) ausgeführt.
 - Auch bei gleicher Versionsnummer wird bei geänderter VSIX-Signatur einmalig mit `--force` neu installiert, damit neue Vorschlagslogik sicher aktiv wird.
+- Fehlt die getrackte `.vsix` in einem bestehenden Projektordner, stellt das Script genau diese technische Paketdatei aus `HEAD` wieder her. Das ist nötig, weil `git pull --ff-only` lokal gelöschte Dateien nicht repariert, wenn der Commit bereits aktuell ist.
 - Ist die CLI nicht verfügbar, bleibt die manuelle VSIX-Installation der Fallback.
 
-Hinweis: Die Auslieferung an Kunden erfolgt idealerweise mit bereits gebautem `.vsix` im Projektpaket.
+Hinweis: Die Auslieferung an Kunden erfolgt mit bereits gebautem `.vsix` im Projektpaket.
 
 ## Update-Strategie für Kunden (empfohlen)
 
@@ -88,9 +91,10 @@ Ziel: Updates für Redakteure ohne manuelle VSIX-Schritte.
 3. VSIX mitliefern:
    - neue Datei `lyfmark-vscode-<version>.vsix` im Template belassen.
 4. Automatische Installation über Installer/Support:
-   - `install-local-extension.mjs` baut bei Bedarf die VSIX neu und installiert diese.
+   - `install-local-extension.mjs` installiert die mitgelieferte VSIX.
    - installierter Stand wird über `publisher.name@version` plus VSIX-Signatur geprüft; bei geändertem Inhalt wird auch bei gleicher Versionsnummer aktualisiert.
    - in WSL wird explizit auf dem Remote-Target (`--remote wsl+<Distro>`) installiert.
+   - auf Windows läuft die Installation über `code.cmd` und nicht über `Code.exe`.
 5. Fallback für gesperrte Umgebungen:
    - wenn `code`-CLI fehlt, bleibt manuelle VSIX-Installation als klarer Fallback.
 
