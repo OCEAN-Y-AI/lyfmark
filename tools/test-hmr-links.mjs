@@ -1,8 +1,12 @@
+/**
+ * Validates that root customer folders update Astro dev output through repaired src mirrors.
+ */
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
 import { access, readFile, rm, writeFile } from "node:fs/promises"
 import net from "node:net"
 import path from "node:path"
+import { createSpawnEnv, resolveCommandInvocation } from "./installer/command-resolution.mjs"
 
 const PROJECT_ROOT = process.cwd()
 const PAGE_PATH = path.join(PROJECT_ROOT, "pages", "tmp-hmr-link-check.md")
@@ -16,6 +20,15 @@ const UPDATE_TIMEOUT_MS = 60_000
 const POLL_INTERVAL_MS = 500
 
 const sleep = async (durationMs) => await new Promise((resolve) => setTimeout(resolve, durationMs))
+
+const hmrSpawnEnv = () =>
+	createSpawnEnv({
+		env: {
+			...process.env,
+			FORCE_COLOR: "0",
+			LYFMARK_REPAIR_SKIP_VSCODE_EXTENSIONS: "1",
+		},
+	})
 
 const pathExists = async (targetPath) => {
 	try {
@@ -119,12 +132,13 @@ const updateFirstMenuEntry = (menuSource, label) => {
 }
 
 const startDevServer = (port) => {
-	const child = spawn("npm", ["run", "dev", "--", "--host", "127.0.0.1", "--port", String(port)], {
+	const env = hmrSpawnEnv()
+	const command = resolveCommandInvocation("npm", ["run", "dev", "--", "--host", "127.0.0.1", "--port", String(port)], {
+		env,
+	})
+	const child = spawn(command.executable, command.args, {
 		cwd: PROJECT_ROOT,
-		env: {
-			...process.env,
-			FORCE_COLOR: "0",
-		},
+		env,
 		detached: process.platform !== "win32",
 		stdio: ["ignore", "pipe", "pipe"],
 	})
@@ -136,6 +150,9 @@ const startDevServer = (port) => {
 	})
 	child.stderr.on("data", (chunk) => {
 		stderr += String(chunk)
+	})
+	child.on("error", (error) => {
+		stderr += `\n${error instanceof Error ? error.stack || error.message : String(error)}\n`
 	})
 
 	return {
@@ -189,10 +206,38 @@ const stopDevServer = async (child) => {
 	})
 }
 
+const runRepair = async () =>
+	await new Promise((resolve, reject) => {
+		const child = spawn(process.execPath, ["tools/repair.mjs"], {
+			cwd: PROJECT_ROOT,
+			env: hmrSpawnEnv(),
+			stdio: ["ignore", "pipe", "pipe"],
+		})
+
+		let stdout = ""
+		let stderr = ""
+		child.stdout.on("data", (chunk) => {
+			stdout += String(chunk)
+		})
+		child.stderr.on("data", (chunk) => {
+			stderr += String(chunk)
+		})
+		child.on("error", reject)
+		child.on("close", (code) => {
+			if (code === 0) {
+				resolve()
+				return
+			}
+			reject(new Error(`Repair before HMR test failed with exit code ${code ?? 1}.\n${stdout}\n${stderr}`))
+		})
+	})
+
 const main = async () => {
 	const port = await getFreePort()
 	const baseUrl = `http://127.0.0.1:${port}`
 	const testPageUrl = `${baseUrl}${TEST_ROUTE}`
+
+	await runRepair()
 
 	if (await pathExists(PAGE_PATH)) {
 		throw new Error(`Temporary test page already exists: ${PAGE_PATH}`)

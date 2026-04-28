@@ -23,6 +23,7 @@ const REPAIR_PATH = path.join(PROJECT_ROOT, "tools", "repair.mjs")
 const PACKAGE_CORE_PATH = path.join(PROJECT_ROOT, "tools", "package-core.mjs")
 const BUILD_RELEASE_PATH = path.join(PROJECT_ROOT, "tools", "build-release.mjs")
 const RELEASE_PATH = path.join(PROJECT_ROOT, "tools", "release.mjs")
+const HMR_LINK_TEST_PATH = path.join(PROJECT_ROOT, "tools", "test-hmr-links.mjs")
 
 const BASE_NON_INTERACTIVE_ARGS = ["--yes", "--skip-git-identity", "--skip-ssh", "--skip-dependencies"]
 const BASE_TEST_ENV = {
@@ -378,6 +379,17 @@ test("repair command installs VS Code extensions without folder-open tasks", asy
 	assert.match(source, /LYFMARK_REPAIR_SKIP_VSCODE_EXTENSIONS/u)
 	assert.match(source, /install-local-extension\.mjs/u)
 	assert.match(source, /VS Code extensions: ready/u)
+})
+
+test("HMR link test repairs mirrors and starts dev server with safe npm resolution", async () => {
+	const source = await readFile(HMR_LINK_TEST_PATH, "utf8")
+
+	assert.match(source, /runRepair/u)
+	assert.match(source, /tools\/repair\.mjs/u)
+	assert.match(source, /LYFMARK_REPAIR_SKIP_VSCODE_EXTENSIONS/u)
+	assert.match(source, /resolveCommandInvocation\("npm"/u)
+	assert.match(source, /createSpawnEnv/u)
+	assert.doesNotMatch(source, /spawn\("npm"/u)
 })
 
 test("core release package builder creates explicit package artifact and manifest", async () => {
