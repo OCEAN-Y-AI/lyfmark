@@ -13,12 +13,12 @@ Der Installer führt Sie Schritt für Schritt durch:
 - Prüfung von Node.js, npm, Git und SSH
 - Git-Basisangaben (Name/E-Mail)
 - SSH-Key für GitHub
-- Projekt-Setup (`npm install` + Strukturprüfung)
+- Projektvorbereitung mit Strukturprüfung
 
 ## 2) Nach dem Installer
 
-- Öffnen Sie danach VS Code mit der Kundenansicht:
-	- `.vscode/lyfmark.customer.code-workspace`
+- VS Code öffnet sich automatisch mit der vorbereiteten Kundenansicht.
+- Zusätzlich legt der Installer einen Desktop-Link für das Projekt an.
 - Starten Sie den lokalen Server:
 	- `F5` oder `npm run dev`
 

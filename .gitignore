@@ -25,6 +25,7 @@ pnpm-debug.log*
 *.pdf
 *.zip
 /dist-offline
+/dist-release
 /.npm-cache
 /todo.md
 /figma

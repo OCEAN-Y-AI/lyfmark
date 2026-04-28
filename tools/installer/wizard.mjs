@@ -544,13 +544,13 @@ const ensureProjectRoot = async () => {
 
 const runSetupCommands = async (options) => {
 	if (!options.skipDependencies) {
-		console.log(formatStep("Install dependencies (npm install)"))
+		console.log(formatStep("Install dependencies (npm ci)"))
 		const installResult = await runCommandInteractive(
 			"npm",
-			["install", "--no-audit", "--no-fund"],
-			"npm install",
+			["ci", "--no-audit", "--no-fund"],
+			"npm ci",
 			{
-				progressMessage: "npm install is still running. Please wait.",
+				progressMessage: "npm ci is still running. Please wait.",
 				progressIntervalMilliseconds: 15000,
 			},
 		)

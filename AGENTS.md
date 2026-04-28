@@ -6,7 +6,7 @@ Details stehen in `docs/**` und werden von hier aus verlinkt.
 ## Doc-Atlas (immer aktuell halten)
 
 - Public Einstieg: `docs/public/README.md`
-- Public Redaktion: `docs/public/onboarding.md`, `docs/public/content-richtlinien.md`, `docs/public/menu.md`, `docs/public/templates.md`, `docs/public/changelog.md`
+- Public Redaktion: `docs/public/installation.md`, `docs/public/onboarding.md`, `docs/public/content-richtlinien.md`, `docs/public/menu.md`, `docs/public/templates.md`, `docs/public/changelog.md`
 - Public Module: `docs/public/modules/overview.md`, `docs/public/examples/`
 - Internes Doku-Playbook: `docs/internal/kunden-doku-leitfaden.md`, `docs/internal/documentation-structure.md`
 - Produktstrategie intern: `docs/internal/lyfmark-product-strategy.md`
@@ -16,6 +16,7 @@ Details stehen in `docs/**` und werden von hier aus verlinkt.
 - Styles intern: `docs/internal/styles-styleguide.md`, `docs/internal/theme-system.md`
 - Templates intern: `docs/internal/template-system.md`
 - Installer intern: `docs/internal/installer-flow.md`
+- Release intern: `docs/internal/release-flow.md`, `docs/internal/release-packaging-security.md`
 - QA intern: `docs/internal/seo-checkliste.md`, `docs/internal/performance-checkliste.md`
 - Setup intern: `docs/internal/install.md`
 - Remark-Workflow intern: `docs/internal/workflows/remark-typecheck.md`
@@ -56,7 +57,7 @@ Details stehen in `docs/**` und werden von hier aus verlinkt.
 - Windows-Installer-/Wizard-Code darf `npm`/`npm.cmd` nicht als bloßen Namen auflösen; `npm`-Befehle müssen über die zum aktiven `node.exe` gehörende `npm-cli.js` oder einen absoluten `npm.cmd`-Pfad laufen, mit normalisiertem `PATH` und gepipter Ausgabe.
 - PowerShell-Installer-Funktionen, die Werte zurückgeben, dürfen keine nativen Befehlsausgaben in die Pipeline auslaufen lassen; native Befehle nicht über `2>&1`-Pipelines ausführen, weil harmloses `stderr` sonst terminierende PowerShell-Fehler auslösen kann. Native Ausgaben immer kontrolliert an die Konsole schreiben und Rückgabewerte defensiv validieren.
 - PowerShell-Installer-Schritte müssen Download-, Installations- und Wizard-Ausgaben live anzeigen; interaktive Prompts dürfen nie hinter einem wartenden Bootstrap-Prozess versteckt werden.
-- `npm install` ist im normalen Endkunden-Installer verpflichtend, nicht optional; bei längerer Stille muss eine Wartemeldung erscheinen statt einer verdeckten oder vermuteten Eingabeaufforderung, aber kein überflüssiger Hinweis, dass keine Eingabe nötig sei.
+- `npm ci` ist im normalen Endkunden-Installer verpflichtend, nicht optional; bei längerer Stille muss eine Wartemeldung erscheinen statt einer verdeckten oder vermuteten Eingabeaufforderung, aber kein überflüssiger Hinweis, dass keine Eingabe nötig sei.
 - Der Windows-Bootstrap ist für Desktop-Link und automatisches Öffnen der Customer-Workspace verantwortlich; der projektinterne Wizard darf in diesem Kontext keine manuellen VS-Code-Next-Steps ausgeben.
 - Die LyfMark-VS-Code-Extension-Installation muss die mitgelieferte `.vsix` verwenden und auf Windows den CLI-Wrapper `code.cmd` finden können; für `--install-extension` darf niemals direkt `Code.exe` verwendet werden, weil dadurch leere VS-Code-Fenster starten können. Der Kunden-Installer darf dafür nicht spontan `npx`/`vsce` ausführen.
 - Bei bestehenden Installer-Testprojekten kann `git pull --ff-only` lokal gelöschte, bereits aktuelle technische Dateien nicht wiederherstellen; kritische technische Paketdateien wie die LyfMark-`.vsix` dürfen gezielt aus `HEAD` restauriert werden.
@@ -92,6 +93,14 @@ Details stehen in `docs/**` und werden von hier aus verlinkt.
 - Bei Modulen mit WebGL-Overlay plus statischem Bild-Fallback müssen beide Renderpfade dieselbe geometrische Transform-Kette nutzen (Scale/Zoom/Rotation/Offsets), damit viewport-unabhängige Kompositionen stabil bleiben.
 - Produktname für das modulare Markdown/Remark-System ist `LyfMark` (kundenneutral, ohne Kundenbezug in Naming/Artefakten).
 - Auslieferung an Endkunden ist als Out-of-the-box Basis-Template geplant (ZIP entpacken, in VS Code öffnen, arbeitsfähig ohne Zusatzkonfiguration).
+- Kundeninstallationen dürfen das interne Entwicklungsrepository nicht klonen; sie müssen aus versionierten LyfMark-Release-Paketen entstehen und anschließend als eigenes Kunden-GitHub-Repository mit `main` initialisiert werden.
+- Änderungen an Release-Befehlen, Versionierung, Artefaktnamen, Upload-Zielen oder Release-Prüfschritten müssen immer in `docs/internal/release-flow.md` dokumentiert werden.
+- Lokale Core-Releases werden über `npm run build:release` gebaut und geprüft; `npm run release:core` veröffentlicht ausschließlich bereits vorhandene Artefakte und darf niemals selbst bauen.
+- `npm run release` ist der spätere Sammel-Publisher für vorhandene Paketartefakte und darf ebenfalls nicht selbst bauen; fehlende Artefakte müssen vorher mit dem passenden Build-Befehl erzeugt werden.
+- Release-Pakete sind langfristig über eine offline erzeugte Signaturkette zu verifizieren: eingebetteter Root Public Key, pro Paketversion genau ein root-signierter Release Public Key, signiertes Manifest und SHA-256-Prüfung des ZIP.
+- GitHub ist für Kundenpakete nur Entwicklungsplattform und vorübergehender Download-Host, nicht Vertrauenswurzel.
+- Kunden-GitHub-Repositories bleiben bewusst unter Kontrolle des Kunden; der Standardpfad nutzt den Kunden-Account-SSH-Key statt Lyfeld-kontrollierter Deploy Keys.
+- Der Installer muss für Projektabhängigkeiten `npm ci` statt `npm install` verwenden.
 - LyfMark-Prettier ist ein lokales internes Plugin im Template (kein Marketplace-/npm-Publish) und wird nur als Teil bezahlter Kundenpakete ausgeliefert.
 - LyfMark-Prettier nutzt render-sichere Einrückung: pro Modul-Ebene 2 Spaces. Abweichungen davon dürfen sich nur unmittelbar aus der Fachlichkeit des Moduls ergeben, oder müssen vom User explizit bestätigt werden.
 - LyfMark-Prettier-Sonderverhalten wird ausschließlich als interne Directive-Policy modelliert (`tools/lyfmark-prettier/directive-policies.mjs`) und nicht als ad-hoc Sonderlogik in den Passes.

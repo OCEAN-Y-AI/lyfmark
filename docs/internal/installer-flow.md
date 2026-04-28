@@ -1,15 +1,18 @@
 # Installer-Flow (Doppelklick, nicht-technisch)
 
-Stand: 24.04.2026
+Stand: 28.04.2026
 
 ## Ziel
 
-Der Erststart muss ohne manuelle Terminal-Bedienung möglich sein: Doppelklick auf einen OS-spezifischen Starter, danach geführte Installation bis zum lauffähigen Projektzustand.
+Der Erststart muss ohne manuelle Terminal-Bedienung möglich sein: Doppelklick auf einen OS-spezifischen Starter, danach geführte Installation bis zum lauffähigen, kunden-eigenen Projektzustand.
 
 ## Artefakte
 
 - Kundenartefakt Zielbild: `LyfMark-Setup.exe`.
 - Windows-Installationsskript als aktuelle Bootstrap-Quelle: `installer/windows/install.ps1`.
+- Core-Paket `1.0` als Release-Asset: `lyfmark-core-1.0.zip`.
+- Operativer Release-Ablauf: `docs/internal/release-flow.md`.
+- Release-/Paket-Sicherheitsvertrag: `docs/internal/release-packaging-security.md`.
 - Projektinterner Wizard nach erfolgreichem Bootstrap: `tools/installer/wizard.mjs`.
 - Projektinterne Wrapper für bereits vorhandene Projektordner:
 	- Windows: `installer/windows/install.cmd`
@@ -26,15 +29,17 @@ Der Erststart muss ohne manuelle Terminal-Bedienung möglich sein: Doppelklick a
 	- `git`
 	- `ssh-keygen`
 	- Visual Studio Code
-4. Das Bootstrap-Skript lädt das LyfMark-Projekt in den lokalen Zielordner.
-5. Der projektinterne Wizard prüft/setzt Git-Identität (`git config --global user.name/user.email`).
-6. Der Wizard prüft/erzeugt den SSH-Key (`~/.ssh/id_ed25519`) und öffnet die GitHub-Key-Seite.
-7. Der Wizard installiert Projektabhängigkeiten (`npm install`).
-8. Der Wizard finalisiert die Struktur (`npm run repair`).
-9. Das Bootstrap-Skript installiert die LyfMark-VS-Code-Extension einmalig über `tools/lyfmark-vscode/install-local-extension.mjs`.
-10. Das Bootstrap-Skript erstellt einen Desktop-Link auf die Customer-Workspace.
-11. Das Bootstrap-Skript öffnet die Customer-Workspace in Visual Studio Code.
-12. Abschluss mit klaren nächsten Schritten.
+4. Das Bootstrap-Skript lädt das versionierte LyfMark-Core-Paket, verifiziert es langfristig über Manifest/Signaturen und entpackt es in den lokalen Zielordner.
+5. Das Bootstrap-Skript initialisiert daraus ein neues Git-Repository mit Branch `main`.
+6. Der projektinterne Wizard prüft/setzt Git-Identität (`git config --global user.name/user.email`).
+7. Der Wizard prüft/erzeugt den Kunden-SSH-Key (`~/.ssh/id_ed25519`) und richtet ihn für GitHub ein.
+8. Der Installer verbindet ein leeres Kunden-GitHub-Repository, setzt `origin` und pusht den Initial Commit auf `main`. Für den pragmatischen Testkundenstand wird die Repository-URL übergeben oder eingegeben; die vollautomatische Erstellung per OAuth/GitHub-App folgt später.
+9. Der Wizard installiert Projektabhängigkeiten (`npm ci`).
+10. Der Wizard finalisiert die Struktur (`npm run repair`).
+11. Das Bootstrap-Skript installiert die LyfMark-VS-Code-Extension einmalig über `tools/lyfmark-vscode/install-local-extension.mjs`.
+12. Das Bootstrap-Skript erstellt einen Desktop-Link auf die Customer-Workspace.
+13. Das Bootstrap-Skript öffnet die Customer-Workspace in Visual Studio Code.
+14. Abschluss mit klaren nächsten Schritten.
 
 ## Fehlerverhalten (DbC)
 
@@ -55,7 +60,9 @@ Der Erststart muss ohne manuelle Terminal-Bedienung möglich sein: Doppelklick a
 Windows-Bootstrap (`installer/windows/install.ps1`):
 
 - `-InstallInfoPath <pfad>`
-- `-RepositoryUrl <url>`
+- `-CorePackageUrl <url>`
+- `-CoreVersion <version>` (Default für den nächsten Testkunden: `1.0`)
+- `-GithubRepositoryUrl <url>` (optional; vorhandenes leeres Kundenrepository)
 - `-InstallDirectory <pfad>`
 - `-ProjectName <name>`
 - `-Yes`
@@ -63,6 +70,7 @@ Windows-Bootstrap (`installer/windows/install.ps1`):
 - `-GitEmail <email>`
 - `-SshComment <email/oder kommentar>`
 - `-SkipToolInstall`
+- `-SkipSsh`
 - `-SkipVSCode`
 - `-SkipOpenWorkspace`
 - `-NoPause`
@@ -72,7 +80,9 @@ Install-Info-Datei:
 - Bevorzugter Vertrag für spätere GUI-Wrapper, weil Pfade, Namen und E-Mail-Adressen nicht fragil über Shell-Quoting zusammengesetzt werden müssen.
 - Direkte CLI-Parameter haben Vorrang vor Werten aus der Datei.
 - Unterstützte JSON-Felder:
-	- `repositoryUrl`
+	- `corePackageUrl`
+	- `coreVersion`
+	- `githubRepositoryUrl` oder `githubRepoUrl`
 	- `installDirectory` oder `targetDirectory`
 	- `projectName` oder `websiteName`
 	- `gitName`
@@ -80,6 +90,7 @@ Install-Info-Datei:
 	- `sshComment`
 	- `yes` oder `nonInteractive`
 	- `skipToolInstall`
+	- `skipSsh`
 	- `skipVSCode`
 	- `skipOpenWorkspace`
 	- `noPause`
@@ -110,6 +121,23 @@ Projekt-Wizard (`tools/installer/wizard.mjs`):
 	- `--skip-repair`
 - npm-Shortcut: `npm run installer:wizard`
 - Windows-Regel: `npm`-Befehle werden im Wizard nicht über einen bloßen Namen gestartet. Der Wizard bevorzugt die `npm-cli.js`, die zum aktiven `node.exe` gehört, und nutzt nur als Fallback einen absoluten `npm.cmd`-Pfad über `cmd.exe`. Zusätzlich werden Windows-`Path`/`PATH`-Varianten vor Child-Prozessen normalisiert, damit PowerShell-, GitHub-Actions- und GUI-Installer-Kontexte denselben Suchpfad verwenden. Echte Executables wie `git` oder `ssh-keygen` werden weiterhin direkt gestartet.
+- Dependency-Regel: Kundeninstallationen verwenden `npm ci`, nicht `npm install`, damit der ausgelieferte `package-lock.json` reproduzierbar respektiert wird.
+
+GitHub-Kundenrepository-Vertrag:
+
+- Zielbild: Das Kundenrepository wird neu im GitHub-Account des Kunden angelegt.
+- Pragmatischer Testkundenstand: Der Installer akzeptiert eine vorhandene leere GitHub-Repository-URL über `GithubRepositoryUrl`/`githubRepositoryUrl` oder interaktive Eingabe.
+- Lyfeld IT erhält dadurch keinen automatischen Zugriff.
+- Standardbranch ist `main`.
+- Der Initial Commit entsteht lokal aus dem geprüften Core-Paket.
+- `origin` zeigt auf das Kundenrepository.
+- Der Standardpfad verwendet den Kunden-SSH-Key. Projektbezogene Zusatzschlüssel sind bewusst kein Standard, weil sie nicht-technische Kunden unnötig verwirren würden.
+- Der Installer soll typische GitHub-Fehler klar einordnen:
+	- Login nicht abgeschlossen
+	- Repository-Name existiert bereits
+	- fehlende Rechte in Organisationen
+	- SSH-Key konnte nicht hinzugefügt werden
+	- Push wegen Rechten oder nicht leerem Remote abgelehnt
 
 Non-interactive (`--yes`) contract:
 
@@ -128,7 +156,7 @@ Admin-/Tool-Installationsvertrag:
 - `winget` wird mit `--silent` und `--disable-interactivity` aufgerufen; `--allow-reboot` wird bewusst nicht verwendet.
 - Wenn ein Installer dennoch einen Neustart erzwingt, liegt das außerhalb des LyfMark-Skripts und muss als Paket-/Windows-/VM-Verhalten analysiert werden.
 - Native Ausgaben aus PowerShell-Bootstrap-Schritten (z. B. `winget`, `git`, `node`) müssen live im Installationsfenster sichtbar bleiben und dürfen nicht als Funktions-Rückgabewerte weiterlaufen. Dafür wird `System.Diagnostics.ProcessStartInfo` ohne PowerShell-Pipeline und ohne `stdout`/`stderr`-Umleitung genutzt. Sonst kann PowerShell stdout mit fachlichen Rückgabewerten vermischen, harmlose `stderr`-Statuszeilen als terminierende Fehler behandeln oder interaktive Wizard-Fragen verdecken.
-- `npm install` ist im normalen Installer-Ablauf verpflichtend und darf keine Auswahlfrage an Endkunden stellen. Bei längerer Stille muss der Wizard eine klare Wartemeldung ausgeben, aber keine unnötige Erklärung, dass keine Eingabe nötig sei.
+- `npm ci` ist im normalen Installer-Ablauf verpflichtend und darf keine Auswahlfrage an Endkunden stellen. Bei längerer Stille muss der Wizard eine klare Wartemeldung ausgeben, aber keine unnötige Erklärung, dass keine Eingabe nötig sei.
 - Wenn der Windows-Bootstrap den projektinternen Wizard ausführt, muss der Wizard keine manuellen Abschlussanweisungen zum Öffnen von VS Code ausgeben. Desktop-Link und Workspace-Start sind Aufgabe des Windows-Bootstraps.
 - Die lokale VS-Code-Extension wird aus der mitgelieferten `.vsix` installiert. Der Installer darf dabei nicht spontan `npx`/`vsce` ausführen, weil das zusätzliche Downloads und Prompts verursachen kann. Auf Windows muss die Extension-Installation direkt `code.cmd` aus dem VS-Code-Installationsordner nutzen können, wenn der `code`-CLI-Befehl nach frischer VS-Code-Installation noch nicht im aktuellen `PATH` liegt. `Code.exe` darf für `--install-extension` nicht verwendet werden, weil dadurch leere VS-Code-Fenster starten können.
 - Fehlt die mitgelieferte `.vsix` in einem bestehenden Projektordner, darf der Extension-Installer genau diese technische Paketdatei aus `HEAD` wiederherstellen. Grund: `git pull --ff-only` repariert lokal gelöschte, bereits getrackte Dateien nicht, wenn der Commit schon aktuell ist.
@@ -144,6 +172,8 @@ Admin-/Tool-Installationsvertrag:
 	- Auto-E2E: `npm run test:installer:e2e:auto`
 	- Manual-E2E: `npm run test:installer:e2e:manual`
 - GitHub-Workflow: `.github/workflows/installer-tests.yml`
+- Core-Release lokal bauen und prüfen: `npm run build:release`
+- Core-Release vorhandene Artefakte hochladen: `npm run release:core`
 
 CI-Contract:
 
@@ -157,13 +187,13 @@ CI-Contract:
 	- Fail-fast außerhalb vom Projekt-Root
 	- nicht-interaktiver Wizard-Lauf inkl. `npm run repair`
 	- Wrapper-Smoke-Test je Plattform mit Argument-Weitergabe
-	- vollständiger E2E-Installlauf je Plattform (`ubuntu-latest`, `macos-latest`, `windows-latest`) mit Wizard + Wrapper + `npm install` + `npm run repair`
+	- vollständiger E2E-Installlauf je Plattform (`ubuntu-latest`, `macos-latest`, `windows-latest`) mit Wizard + Wrapper + `npm ci` + `npm run repair`
 	- Windows-Bootstrap-Skript als echten Einstiegspunkt (`installer/windows/install.ps1`) gegen ein frisches Zielverzeichnis
 
 Lokaler Vorabtest für Windows:
 
 - Vor einem Push kann der aktuelle Working Tree in ein temporäres lokales Git-Repository kopiert und `installer/windows/install.ps1` per Windows PowerShell dagegen ausgeführt werden. Das testet den echten Bootstrap-Pfad ohne GitHub-Update.
-- Der Installationsordner muss auf einem nativen Windows-Laufwerk liegen, z. B. unter `%TEMP%`. WSL-UNC-Pfade (`\\wsl.localhost\...`) oder per `pushd` gemappte WSL-Laufwerke reichen nur für Teiltests: `npm install` kann starten, aber Paket-Lifecycle-Skripte und Junction-/Symlink-Erstellung können dort an Windows-/WSL-Dateisystemgrenzen scheitern.
+- Der Installationsordner muss auf einem nativen Windows-Laufwerk liegen, z. B. unter `%TEMP%`. WSL-UNC-Pfade (`\\wsl.localhost\...`) oder per `pushd` gemappte WSL-Laufwerke reichen nur für Teiltests: `npm ci` kann starten, aber Paket-Lifecycle-Skripte und Junction-/Symlink-Erstellung können dort an Windows-/WSL-Dateisystemgrenzen scheitern.
 - Lokale Bootstrap-Tests müssen `HOME` und `USERPROFILE` auf ein temporäres Testverzeichnis setzen, damit Git-Identität und SSH-Key-Erkennung nicht die echte Nutzerumgebung verändern oder auslesen.
 - Wenn Codex diesen Test aus WSL ausführen soll, muss ein temporärer Windows-Pfad in der Sandbox beschreibbar sein.
 

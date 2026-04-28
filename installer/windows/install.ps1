@@ -3,7 +3,9 @@
 [CmdletBinding()]
 param(
 	[string]$InstallInfoPath = "",
-	[string]$RepositoryUrl = "https://github.com/OCEAN-Y-AI/lyfmark.git",
+	[string]$CoreVersion = "1.0",
+	[string]$CorePackageUrl = "",
+	[string]$GithubRepositoryUrl = "",
 	[string]$InstallDirectory = (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "LyfMark"),
 	[string]$ProjectName = "",
 	[switch]$Yes,
@@ -11,6 +13,7 @@ param(
 	[string]$GitEmail = "",
 	[string]$SshComment = "",
 	[switch]$SkipToolInstall,
+	[switch]$SkipSsh,
 	[switch]$SkipVSCode,
 	[switch]$SkipOpenWorkspace,
 	[switch]$AdminToolInstallOnly,
@@ -212,6 +215,64 @@ function Invoke-NativeCommand {
 	}
 }
 
+function Invoke-NativeCommandCapture {
+	param(
+		[string]$Command,
+		[string[]]$Arguments,
+		[string]$Label,
+		[string]$WorkingDirectory = ""
+	)
+
+	$startInfo = New-Object System.Diagnostics.ProcessStartInfo
+	$startInfo.FileName = $Command
+	$startInfo.Arguments = Join-NativeArguments $Arguments
+	$startInfo.UseShellExecute = $false
+	$startInfo.RedirectStandardOutput = $true
+	$startInfo.RedirectStandardError = $true
+	$startInfo.RedirectStandardInput = $false
+	$startInfo.CreateNoWindow = $true
+	if (-not [string]::IsNullOrWhiteSpace($WorkingDirectory)) {
+		$startInfo.WorkingDirectory = $WorkingDirectory
+	}
+
+	$process = New-Object System.Diagnostics.Process
+	$process.StartInfo = $startInfo
+	$processStarted = $false
+
+	try {
+		if (-not $process.Start()) {
+			throw "$Label failed to start."
+		}
+		$processStarted = $true
+		$stdout = $process.StandardOutput.ReadToEnd()
+		$stderr = $process.StandardError.ReadToEnd()
+		while (-not $process.WaitForExit(250)) {
+		}
+		$exitCode = $process.ExitCode
+	} catch {
+		if ($processStarted -and -not $process.HasExited) {
+			$process.Kill()
+			$process.WaitForExit()
+		}
+		throw
+	} finally {
+		$process.Dispose()
+	}
+
+	if ($exitCode -ne 0) {
+		$details = $stderr.Trim()
+		if ([string]::IsNullOrWhiteSpace($details)) {
+			$details = $stdout.Trim()
+		}
+		if ([string]::IsNullOrWhiteSpace($details)) {
+			throw "$Label failed with exit code $exitCode."
+		}
+		throw "$Label failed with exit code $exitCode. $details"
+	}
+
+	return $stdout.Trim()
+}
+
 function Get-InstallInfoValue {
 	param(
 		[object]$InstallInfo,
@@ -304,7 +365,9 @@ function Import-InstallInfo {
 		throw "Install info file must contain one JSON object: $resolvedPath"
 	}
 
-	Set-StringParameterFromInstallInfo $installInfo "RepositoryUrl" @("repositoryUrl")
+	Set-StringParameterFromInstallInfo $installInfo "CoreVersion" @("coreVersion")
+	Set-StringParameterFromInstallInfo $installInfo "CorePackageUrl" @("corePackageUrl")
+	Set-StringParameterFromInstallInfo $installInfo "GithubRepositoryUrl" @("githubRepositoryUrl", "githubRepoUrl", "repositoryUrl")
 	Set-StringParameterFromInstallInfo $installInfo "InstallDirectory" @("installDirectory", "targetDirectory")
 	Set-StringParameterFromInstallInfo $installInfo "ProjectName" @("projectName", "websiteName")
 	Set-StringParameterFromInstallInfo $installInfo "GitName" @("gitName")
@@ -312,6 +375,7 @@ function Import-InstallInfo {
 	Set-StringParameterFromInstallInfo $installInfo "SshComment" @("sshComment")
 	Set-SwitchParameterFromInstallInfo $installInfo "Yes" @("yes", "nonInteractive")
 	Set-SwitchParameterFromInstallInfo $installInfo "SkipToolInstall" @("skipToolInstall")
+	Set-SwitchParameterFromInstallInfo $installInfo "SkipSsh" @("skipSsh")
 	Set-SwitchParameterFromInstallInfo $installInfo "SkipVSCode" @("skipVSCode")
 	Set-SwitchParameterFromInstallInfo $installInfo "SkipOpenWorkspace" @("skipOpenWorkspace")
 	Set-SwitchParameterFromInstallInfo $installInfo "NoPause" @("noPause")
@@ -372,7 +436,9 @@ function ConvertTo-ArgumentList {
 		"-NoProfile",
 		"-ExecutionPolicy", "Bypass",
 		"-File", "`"$(Get-ReentryScriptPath)`"",
-		"-RepositoryUrl", "`"$RepositoryUrl`"",
+		"-CoreVersion", "`"$CoreVersion`"",
+		"-CorePackageUrl", "`"$CorePackageUrl`"",
+		"-GithubRepositoryUrl", "`"$GithubRepositoryUrl`"",
 		"-InstallDirectory", "`"$InstallDirectory`"",
 		"-ProjectName", "`"$ResolvedProjectName`""
 	)
@@ -391,6 +457,9 @@ function ConvertTo-ArgumentList {
 	}
 	if ($SkipToolInstall) {
 		$arguments += "-SkipToolInstall"
+	}
+	if ($SkipSsh) {
+		$arguments += "-SkipSsh"
 	}
 	if ($SkipVSCode) {
 		$arguments += "-SkipVSCode"
@@ -419,7 +488,7 @@ function Test-ToolInstallNeeded {
 	if (-not (Test-CommandAvailable "npm")) {
 		return $true
 	}
-	if (-not (Test-CommandAvailable "ssh-keygen")) {
+	if (-not $SkipSsh -and -not (Test-CommandAvailable "ssh-keygen")) {
 		return $true
 	}
 	if (-not $SkipVSCode -and -not (Test-CommandAvailable "code")) {
@@ -500,7 +569,7 @@ function Ensure-RequiredTools {
 	if (-not (Test-CommandAvailable "npm")) {
 		throw "npm is missing although Node.js is available. Reinstall Node.js LTS and start LyfMark again."
 	}
-	if (-not (Test-CommandAvailable "ssh-keygen")) {
+	if (-not $SkipSsh -and -not (Test-CommandAvailable "ssh-keygen")) {
 		throw "ssh-keygen is missing. Reinstall Git for Windows and start LyfMark again."
 	}
 
@@ -514,15 +583,54 @@ function Get-ProjectDirectory {
 	return Join-Path $InstallDirectory $script:EffectiveProjectName
 }
 
+function Get-CorePackageUrl {
+	if (-not [string]::IsNullOrWhiteSpace($CorePackageUrl)) {
+		return $CorePackageUrl
+	}
+	return "https://github.com/OCEAN-Y-AI/lyfmark/releases/download/core-v$CoreVersion/lyfmark-core-$CoreVersion.zip"
+}
+
+function Copy-CorePackage {
+	param(
+		[string]$ResolvedPackageUrl,
+		[string]$TargetPackagePath
+	)
+
+	if (Test-Path -LiteralPath $ResolvedPackageUrl) {
+		Copy-Item -LiteralPath $ResolvedPackageUrl -Destination $TargetPackagePath -Force
+		return
+	}
+
+	Invoke-WebRequest -Uri $ResolvedPackageUrl -OutFile $TargetPackagePath
+}
+
+function Expand-CorePackage {
+	param(
+		[string]$PackagePath,
+		[string]$ProjectDirectory
+	)
+
+	New-Item -ItemType Directory -Force -Path $ProjectDirectory | Out-Null
+	Expand-Archive -LiteralPath $PackagePath -DestinationPath $ProjectDirectory -Force
+}
+
+function Initialize-CustomerGitRepository {
+	param([string]$ProjectDirectory)
+
+	if (-not (Test-Path -LiteralPath (Join-Path $ProjectDirectory ".git"))) {
+		Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "init") "Initialize customer Git repository"
+	}
+	Invoke-NativeCommand "git" @("config", "--global", "--add", "safe.directory", $ProjectDirectory) "Trust customer Git directory"
+	Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "branch", "-M", "main") "Set customer Git branch to main"
+}
+
 function Install-ProjectSources {
 	$projectDirectory = Get-ProjectDirectory
 	$packageJsonPath = Join-Path $projectDirectory "package.json"
 
 	if (Test-Path -LiteralPath $packageJsonPath) {
 		Write-Host "[lyfmark-install] Existing LyfMark project found: $projectDirectory"
-		if (Test-Path -LiteralPath (Join-Path $projectDirectory ".git")) {
-			Invoke-NativeCommand "git" @("-C", $projectDirectory, "pull", "--ff-only") "Update existing LyfMark project"
-		}
+		Initialize-CustomerGitRepository $projectDirectory
 		return $projectDirectory
 	}
 
@@ -533,8 +641,21 @@ function Install-ProjectSources {
 		}
 	}
 
-	Write-Step "Downloading LyfMark project"
-	Invoke-NativeCommand "git" @("clone", "--depth", "1", $RepositoryUrl, $projectDirectory) "Download LyfMark from GitHub"
+	Write-Step "Downloading LyfMark Core package"
+	$resolvedPackageUrl = Get-CorePackageUrl
+	$temporaryDirectory = Join-Path ([IO.Path]::GetTempPath()) ("lyfmark-core-" + [guid]::NewGuid().ToString("N"))
+	New-Item -ItemType Directory -Force -Path $temporaryDirectory | Out-Null
+	$packagePath = Join-Path $temporaryDirectory "lyfmark-core.zip"
+	try {
+		Copy-CorePackage $resolvedPackageUrl $packagePath
+		Expand-CorePackage $packagePath $projectDirectory
+	} finally {
+		Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force -ErrorAction SilentlyContinue
+	}
+	if (-not (Test-Path -LiteralPath $packageJsonPath)) {
+		throw "The LyfMark Core package did not contain package.json at its root. Package: $resolvedPackageUrl"
+	}
+	Initialize-CustomerGitRepository $projectDirectory
 	return $projectDirectory
 }
 
@@ -553,6 +674,9 @@ function Invoke-ProjectWizard {
 		if (-not [string]::IsNullOrWhiteSpace($SshComment)) {
 			$wizardArguments += @("--ssh-comment", $SshComment)
 		}
+	}
+	if ($SkipSsh) {
+		$wizardArguments += "--skip-ssh"
 	}
 
 	$previousBootstrapFinalizes = $env:LYFMARK_INSTALLER_BOOTSTRAP_FINALIZES
@@ -690,6 +814,106 @@ function Open-CustomerWorkspace {
 	}
 }
 
+function Test-GitHeadExists {
+	param([string]$ProjectDirectory)
+
+	try {
+		[void](Invoke-NativeCommandCapture "git" @("-C", $ProjectDirectory, "rev-parse", "--verify", "HEAD") "Check initial Git commit")
+		return $true
+	} catch {
+		return $false
+	}
+}
+
+function Get-GitStatusPorcelain {
+	param([string]$ProjectDirectory)
+	return Invoke-NativeCommandCapture "git" @("-C", $ProjectDirectory, "status", "--porcelain") "Check customer Git status"
+}
+
+function Ensure-InitialCustomerCommit {
+	param([string]$ProjectDirectory)
+
+	$hasHead = Test-GitHeadExists $ProjectDirectory
+	$status = Get-GitStatusPorcelain $ProjectDirectory
+	if ($hasHead -and [string]::IsNullOrWhiteSpace($status)) {
+		Write-Host "[lyfmark-install] Customer Git repository already has an initial commit."
+		return
+	}
+
+	Write-Step "Creating initial customer Git commit"
+	Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "add", ".") "Stage LyfMark project files"
+	$statusAfterAdd = Get-GitStatusPorcelain $ProjectDirectory
+	if ([string]::IsNullOrWhiteSpace($statusAfterAdd)) {
+		Write-Host "[lyfmark-install] No project changes need to be committed."
+		return
+	}
+	Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "commit", "-m", "Initial LyfMark website") "Create initial customer commit"
+}
+
+function Resolve-GithubRepositoryUrl {
+	if (-not [string]::IsNullOrWhiteSpace($GithubRepositoryUrl)) {
+		return $GithubRepositoryUrl.Trim()
+	}
+	if ($Yes) {
+		return ""
+	}
+
+	Write-Step "Connect customer GitHub repository"
+	Write-Host "[lyfmark-install] Create an empty GitHub repository for this website, then paste its repository URL."
+	Write-Host "[lyfmark-install] Example: git@github.com:your-name/your-website.git"
+	Write-Host "[lyfmark-install] Leave empty to skip the first push for now."
+	Start-Process "https://github.com/new" | Out-Null
+	$answer = Read-Host "GitHub repository URL"
+	return $answer.Trim()
+}
+
+function Ensure-GitRemote {
+	param(
+		[string]$ProjectDirectory,
+		[string]$RemoteUrl
+	)
+
+	if ([string]::IsNullOrWhiteSpace($RemoteUrl)) {
+		Write-Host "[lyfmark-install] GitHub remote setup skipped. The local project is ready and can be connected later."
+		return $false
+	}
+
+	if ($RemoteUrl -notmatch "^(git@github\.com:.+/.+\.git|https://github\.com/.+/.+\.git)$") {
+		throw "GitHub repository URL must look like git@github.com:account/repository.git or https://github.com/account/repository.git."
+	}
+
+	$existingRemote = ""
+	try {
+		$existingRemote = Invoke-NativeCommandCapture "git" @("-C", $ProjectDirectory, "remote", "get-url", "origin") "Read GitHub origin"
+	} catch {
+		$existingRemote = ""
+	}
+
+	if ([string]::IsNullOrWhiteSpace($existingRemote)) {
+		Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "remote", "add", "origin", $RemoteUrl) "Set GitHub origin"
+	} else {
+		Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "remote", "set-url", "origin", $RemoteUrl) "Update GitHub origin"
+	}
+	return $true
+}
+
+function Publish-CustomerRepository {
+	param([string]$ProjectDirectory)
+
+	Ensure-InitialCustomerCommit $ProjectDirectory
+	$remoteUrl = Resolve-GithubRepositoryUrl
+	if (-not (Ensure-GitRemote $ProjectDirectory $remoteUrl)) {
+		return
+	}
+
+	Write-Step "Pushing initial website to GitHub"
+	try {
+		Invoke-NativeCommand "git" @("-C", $ProjectDirectory, "push", "-u", "origin", "main") "Push initial customer commit"
+	} catch {
+		throw "Initial GitHub push failed. Check that the GitHub repository exists, is empty, and that your SSH key is added to your GitHub account. $($_.Exception.Message)"
+	}
+}
+
 function Pause-IfNeeded {
 	if (-not $NoPause) {
 		Write-Host ""
@@ -706,7 +930,8 @@ function Main {
 
 	Write-Host "[lyfmark-install] LyfMark installation started."
 	Write-Host "[lyfmark-install] Target folder: $InstallDirectory"
-	Write-Host "[lyfmark-install] Source: $RepositoryUrl"
+	Write-Host "[lyfmark-install] Core version: $CoreVersion"
+	Write-Host "[lyfmark-install] Core package: $(Get-CorePackageUrl)"
 
 	if ($AdminToolInstallOnly) {
 		Ensure-RequiredTools
@@ -725,6 +950,7 @@ function Main {
 	}
 	$projectDirectory = [string]$projectDirectoryOutput[0]
 	Invoke-ProjectWizard $projectDirectory
+	Publish-CustomerRepository $projectDirectory
 	Install-LyfMarkVsCodeExtension $projectDirectory
 	New-DesktopWorkspaceShortcut $projectDirectory
 	Open-CustomerWorkspace $projectDirectory

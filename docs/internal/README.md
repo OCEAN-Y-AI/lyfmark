@@ -14,6 +14,8 @@ Diese Dokumentation ist nur für Lyfeld IT intern.
 - QA: `docs/internal/seo-checkliste.md`, `docs/internal/performance-checkliste.md`
 - Setup: `docs/internal/install.md`
 - Produktstrategie: `docs/internal/lyfmark-product-strategy.md`
+- Release-Flow: `docs/internal/release-flow.md`
+- Release-/Paket-Sicherheit: `docs/internal/release-packaging-security.md`
 
 ## Auslieferung
 

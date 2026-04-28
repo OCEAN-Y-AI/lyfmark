@@ -24,6 +24,12 @@
     "test:hmr-links": "node tools/test-hmr-links.mjs",
     "test:frontmatter-colors": "node tools/test-frontmatter-colors.mjs",
     "package:offline": "node tools/package-offline.mjs",
+    "package:core": "node tools/package-core.mjs --version 1.0",
+    "build:release": "node tools/build-release.mjs",
+    "release:core": "node tools/release.mjs core",
+    "release:template": "node tools/release.mjs template",
+    "release:modules": "node tools/release.mjs modules",
+    "release": "node tools/release.mjs auto",
     "render:shot": "node tools/browser-render.mjs",
     "render:compare": "node tools/browser-render.mjs --compare",
     "render:wave-matrix": "node tools/render-wave-matrix.mjs"

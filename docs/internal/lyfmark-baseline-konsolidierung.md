@@ -42,5 +42,8 @@ Betriebsregel:
 
 - Installer kümmert sich um Erstsetup für nicht-technische Nutzer.
 - Der Erstsetup-Flow läuft über OS-Wrapper (`installer/windows|macos|linux`) und den Wizard `tools/installer/wizard.mjs`.
+- Kundeninstallationen entstehen aus versionierten LyfMark-Release-Paketen, nicht aus einem Clone des internen Entwicklungsrepositories.
+- Das lokale Kundenprojekt wird als neues Git-Repository mit Branch `main` initialisiert und in ein neu erstelltes GitHub-Repository des Kunden gepusht.
+- Projektabhängigkeiten werden im Installer mit `npm ci` installiert.
 - Laufende Strukturreparaturen erfolgen lokal über `npm repair`.
 - Lizenzprüfungen für Module finden nur initial beim Download/Install statt, nicht während Laufzeit/Build.

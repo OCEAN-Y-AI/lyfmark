@@ -77,7 +77,9 @@ Das Windows-Bootstrap-Skript:
 - fragt den Projekt-/Webseitennamen ab und verwendet ihn als Zielordner
 - kann Daten direkt per Parameter oder gesammelt per Install-Info-JSON erhalten
 - installiert/prüft Git, Node.js/npm, `ssh-keygen` und Visual Studio Code
-- lädt das LyfMark-Projekt aus GitHub
+- lädt langfristig ein versioniertes LyfMark-Core-Paket statt das interne Entwicklungsrepository zu klonen
+- initialisiert daraus ein eigenes Kunden-Git-Repository mit Branch `main`
+- pusht den Initial Commit, wenn eine Kunden-GitHub-Repository-URL übergeben oder eingegeben wurde
 - startet danach den Projekt-Wizard
 - installiert die LyfMark-VS-Code-Extension einmalig
 - erstellt einen Desktop-Link auf die Customer-Workspace
@@ -88,7 +90,18 @@ Der Projekt-Wizard führt:
 - Pflicht-Tools (`node`, `npm`, `git`, `ssh-keygen`)
 - Git-Identität (`user.name`, `user.email`)
 - SSH-Key-Setup für GitHub
-- `npm install` und anschließend `npm run repair`
+- `npm ci` und anschließend `npm run repair`
+
+Release-/Paket-Sicherheit:
+
+- Operativer Release-Ablauf: `docs/internal/release-flow.md`
+- Zielbild: `docs/internal/release-packaging-security.md`
+- Core-Version für den nächsten Testkunden: `1.0`
+- Core-Release lokal bauen und prüfen: `npm run build:release`
+- Core-Release vorhandene Artefakte hochladen: `npm run release:core`
+- GitHub dient für Kundenpakete zunächst als Download-Host, nicht als Vertrauenswurzel.
+- Das Kundenprojekt darf nicht die Git-Historie des internen LyfMark-Repositorys enthalten.
+- Die vollautomatische GitHub-Repository-Erstellung per OAuth/GitHub-App bleibt Folgearbeit; der pragmatische Testkundenstand akzeptiert eine vorhandene leere Repository-URL.
 
 Manueller Windows-VM-Test des aktuellen GitHub-Skripts:
 

@@ -44,3 +44,5 @@ Status: Active structure (baseline for all new documentation).
 - `docs/internal/performance-checkliste.md`
 - `docs/internal/install.md`
 - `docs/internal/kunden-doku-leitfaden.md`
+- `docs/internal/release-flow.md`
+- `docs/internal/release-packaging-security.md`
