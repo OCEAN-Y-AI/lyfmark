@@ -217,6 +217,29 @@ Invoke-WebRequest -Uri "$base/installer/windows/install.ps1" -OutFile "$env:TEMP
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\lyfmark-install.ps1" -CorePackageUrl "$base/dist-release/lyfmark-core-1.0.zip" -ProjectName "Release Candidate" -SkipOpenWorkspace
 ```
 
+Wenn der HTTP-Server in WSL2 läuft, ist `<host-ip>` nicht automatisch die Windows-LAN-IP. WSL2 läuft in einem eigenen NAT-Netz; andere VMs erreichen den WSL-Port nur, wenn Windows den Port weiterleitet. In diesem Fall entweder den Server direkt unter Windows starten oder einen Portproxy einrichten.
+
+Empfohlener Windows-Server statt WSL-Server:
+
+```powershell
+cd "\\wsl$\Debian\home\two\projects\lyfmark"
+py -3 -m http.server 8787 --bind 0.0.0.0
+```
+
+Falls Python unter Windows nicht verfügbar ist, kann alternativ ein Windows-Portproxy auf die aktuelle WSL-IP zeigen. Die WSL-IP muss nach jedem WSL-Neustart neu geprüft werden:
+
+```powershell
+wsl hostname -I
+netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=8787 connectaddress=<wsl-ip> connectport=8787
+New-NetFirewallRule -DisplayName "LyfMark local release test 8787" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8787
+```
+
+Nach dem Test den Portproxy wieder entfernen:
+
+```powershell
+netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=8787
+```
+
 Alternativ können `installer/windows/install.ps1` und `dist-release/lyfmark-core-1.0.zip` direkt in die VM kopiert werden:
 
 ```powershell
