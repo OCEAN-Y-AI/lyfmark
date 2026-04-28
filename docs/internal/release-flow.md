@@ -226,6 +226,18 @@ cd "\\wsl$\Debian\home\two\projects\lyfmark"
 py -3 -m http.server 8787 --bind 0.0.0.0
 ```
 
+Aus der Windows-VM zuerst die Erreichbarkeit prüfen:
+
+```powershell
+Test-NetConnection <windows-host-ip> -Port 8787
+```
+
+Wenn der Port blockiert ist, auf dem Windows-Host eine temporäre Firewall-Regel setzen:
+
+```powershell
+New-NetFirewallRule -DisplayName "LyfMark local release test 8787" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8787
+```
+
 Falls Python unter Windows nicht verfügbar ist, kann alternativ ein Windows-Portproxy auf die aktuelle WSL-IP zeigen. Die WSL-IP muss nach jedem WSL-Neustart neu geprüft werden:
 
 ```powershell
@@ -238,6 +250,7 @@ Nach dem Test den Portproxy wieder entfernen:
 
 ```powershell
 netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=8787
+Remove-NetFirewallRule -DisplayName "LyfMark local release test 8787"
 ```
 
 Alternativ können `installer/windows/install.ps1` und `dist-release/lyfmark-core-1.0.zip` direkt in die VM kopiert werden:
